@@ -12,6 +12,9 @@ if ! command -v deno &> /dev/null; then
     exit 1
 fi
 
+# Format code using Deno's formatter
+deno task fmt
+
 # Check formatting
 echo "📝 Checking code formatting..."
 if ! deno task fmt:check; then
