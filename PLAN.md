@@ -6,22 +6,22 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 
 ## 1. Project Setup and Technologies
 
-- [ ] Create basic project structure: Organize source files (e.g., separate modules for game logic, UI, and world generation) in the src/ directory, following a modular pattern like separating concerns into classes or functions for game entities, map handling, and UI components.
-- [ ] Use the example content of main.ts as a reference, but rewrite the project from scratch.
+- [x] Create basic project structure: Organize source files (e.g., separate modules for game logic, UI, and world generation) in the src/ directory, following a modular pattern like separating concerns into classes or functions for game entities, map handling, and UI components.
+- [x] Use the example content of main.ts as a reference, but rewrite the project from scratch.
 
 ## 2. Game World (Map, Cells, and Player Positioning)
 
-- [ ] Initialize the Leaflet map: Create a scrollable map instance centered on the player's location, using real-world coordinates as the base layer.
-- [ ] Implement hexagonal cell division: Divide the map into cells with a bounding box of approximately 0.0001 degrees per side (roughly house-sized), using a hexagonal grid pattern for deterministic placement—pseudo-code: for each cell, calculate center from lat/lng offset, store as a data structure with id and bounds.
+- [x] Initialize the Leaflet map: Create a scrollable map instance centered on the player's location, using real-world coordinates as the base layer.
+- [x] Implement hexagonal cell division: Divide the map into cells with a bounding box of approximately 0.0001 degrees per side (roughly house-sized), using a hexagonal grid pattern for deterministic placement—pseudo-code: for each cell, calculate center from lat/lng offset, store as a data structure with id and bounds.
 - [ ] Add player positioning: Track the player's current location (e.g., via simulated or real GPS), ensuring the map auto-centers on them and cells generate only near the player to optimize performance.
-- [ ] Ensure deterministic world generation: Use a seeded random number generator (e.g., based on coordinates) to place objects consistently across loads, avoiding randomness that changes per session—pseudo-code: seed = hash(lat, lng); randomValue = seededRandom(seed).
-- [ ] Render map objects: Make all game objects (e.g., coins) visible on the map without clicking, using shared or unique sprites for performance.
+- [x] Ensure deterministic world generation: Use a seeded random number generator (e.g., based on coordinates) to place objects consistently across loads, avoiding randomness that changes per session—pseudo-code: seed = hash(lat, lng); randomValue = seededRandom(seed).
+- [x] Render map objects: Make all game objects (e.g., coins) visible on the map without clicking, using shared or unique sprites for performance.
 
 ## 3. Geocoins (Generation, Spawning, and History)
 
-- [ ] Design coin data structure: Define a coin as an object with properties like numeric value (for D3.a), position, sprite (64x64 bright pixelated texture), and history array (tracking pickups, placements, and combinations as simple event logs).
+- [x] Design coin data structure: Define a coin as an object with properties like numeric value (for D3.a), position, sprite (64x64 bright pixelated texture), and history array (tracking pickups, placements, and combinations as simple event logs).
 - [ ] Implement procedural texture generation: Generate coin sprites deterministically based on value or seed, using a pixelation algorithm similar to GitHub avatars—pseudo-code: for each pixel, color = hash(seed + pixelIndex) % brightColors; apply to 64x64 grid.
-- [ ] Handle coin spawning: Place coins deterministically within cells, ensuring one per cell or sparse distribution, and limit to visible/nearby areas for efficiency.
+- [x] Handle coin spawning: Place coins deterministically within cells, ensuring one per cell or sparse distribution, and limit to visible/nearby areas for efficiency.
 - [ ] Track coin history: Update the history array on interactions (e.g., pickup: add {action: 'picked_up', location: latLng}; placement: add {action: 'placed', location: latLng}).
 - [ ] Enforce carrying limit: Prevent picking up more than one coin at a time, using a simple state check in the player's inventory.
 

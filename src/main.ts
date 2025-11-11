@@ -9,10 +9,10 @@ import "./style.css"; // student-controlled page style
 import "./_leafletWorkaround.ts"; // fixes for missing Leaflet images
 
 // Import world generation
-import { CellInstance, World } from "./world.ts";
+import { World } from "./world.ts";
 
-// Import our luck function
-import luck from "./_luck.ts";
+// Import coin generation
+import { CoinGenerator, renderCoins } from "./generation.ts";
 
 // Create basic UI elements
 
@@ -36,7 +36,6 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
-const CACHE_SPAWN_PROBABILITY = 0.1;
 
 // Create the map (element with id "map" is defined in index.html)
 const map = leaflet.map(mapDiv, {
@@ -62,9 +61,8 @@ const playerMarker = leaflet.marker(CLASSROOM_LATLNG);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
-// Display the player's points
-let playerPoints = 0;
-statusPanelDiv.innerHTML = "No points yet...";
+// Display the player's inventory
+statusPanelDiv.innerHTML = "No coins in inventory...";
 
 // Create world
 const world = new World(CLASSROOM_LATLNG);
@@ -72,43 +70,9 @@ const world = new World(CLASSROOM_LATLNG);
 // Generate cells around origin
 world.generateCellsAround(0, 0);
 
-// Spawn caches in cells
-for (const cell of world.getAllCells()) {
-  if (luck(cell.id) < CACHE_SPAWN_PROBABILITY) {
-    spawnCache(cell);
-  }
-}
+// Generate coins
+const coinGenerator = new CoinGenerator(world);
+coinGenerator.generateCoins();
 
-// Define spawnCache
-function spawnCache(cell: CellInstance) {
-  // Add a polygon to the map to represent the cache
-  const polygon = leaflet.polygon(cell.corners);
-  polygon.addTo(map);
-
-  // Handle interactions with the cache
-  polygon.bindPopup(() => {
-    // Each cache has a random point value, mutable by the player
-    let pointValue = Math.floor(
-      luck([cell.q, cell.r, "initialValue"].toString()) * 100,
-    );
-
-    // The popup offers a description and button
-    const popupDiv = document.createElement("div");
-    popupDiv.innerHTML = `
-                <div>There is a cache here at "${cell.id}". It has value <span id="value">${pointValue}</span>.</div>
-                <button id="poke">poke</button>`;
-
-    // Clicking the button decrements the cache's value and increments the player's points
-    popupDiv
-      .querySelector<HTMLButtonElement>("#poke")!
-      .addEventListener("click", () => {
-        pointValue--;
-        popupDiv.querySelector<HTMLSpanElement>("#value")!.innerHTML =
-          pointValue.toString();
-        playerPoints++;
-        statusPanelDiv.innerHTML = `${playerPoints} points accumulated`;
-      });
-
-    return popupDiv;
-  });
-}
+// Render coins on the map
+renderCoins(coinGenerator, map);
