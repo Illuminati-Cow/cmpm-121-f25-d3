@@ -106,4 +106,46 @@ export class World {
     const r = (-1 / 3 * x + (sqrt3 / 3) * y) / size;
     return { q: Math.round(q), r: Math.round(r) };
   }
+
+  getNearbyCells(
+    playerPos: leaflet.LatLng,
+    reachDistance: number,
+  ): CellInstance[] {
+    return this.getAllCells().filter((cell) =>
+      playerPos.distanceTo(cell.center) < reachDistance
+    );
+  }
+
+  renderNearbyCells(
+    map: leaflet.Map,
+    playerPos: leaflet.LatLng,
+    reachDistance: number,
+  ): void {
+    const opacityFunction = (
+      distance: number,
+      minDistance: number,
+      maxDistance: number,
+      minWeight: number,
+      maxWeight: number,
+    ) => {
+      // Clamp distance to [minDistance, maxDistance]
+      const clamped = Math.min(Math.max(distance, minDistance), maxDistance);
+      const range = maxDistance - minDistance;
+      // If range is zero avoid division by zero and return minWeight
+      if (range === 0) return minWeight;
+      // Normalize to [0,1]
+      const t = 1 - (clamped - minDistance) / range;
+      // Linear interpolate between minWeight and maxWeight
+      return minWeight + t * (maxWeight - minWeight);
+    };
+    for (const cell of this.getNearbyCells(playerPos, reachDistance)) {
+      const distance = playerPos.distanceTo(cell.center);
+      const polygon = leaflet.polygon(cell.corners, {
+        color: "grey",
+        weight: opacityFunction(distance, 10, 60, 0.1, 0.4),
+        fillOpacity: 0.1,
+      });
+      polygon.addTo(map);
+    }
+  }
 }

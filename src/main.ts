@@ -36,6 +36,7 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
+const PLAYER_REACH_DISTANCE = 60; // meters
 
 // Create the map (element with id "map" is defined in index.html)
 const map = leaflet.map(mapDiv, {
@@ -69,6 +70,9 @@ const world = new World(CLASSROOM_LATLNG);
 
 // Generate cells around origin
 world.generateCellsAround(0, 0);
+
+// Render nearby cell overlays
+world.renderNearbyCells(map, CLASSROOM_LATLNG, PLAYER_REACH_DISTANCE);
 
 // Generate coins
 const coinGenerator = new CoinGenerator(world);
