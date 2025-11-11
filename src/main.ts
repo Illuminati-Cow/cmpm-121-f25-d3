@@ -13,6 +13,7 @@ import { World } from "./world.ts";
 
 // Import coin generation
 import { CoinGenerator, renderCoins } from "./generation.ts";
+import { createCoinPopup } from "./ui.ts";
 
 // Create basic UI elements
 
@@ -37,6 +38,18 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 // Tunable gameplay parameters
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const PLAYER_REACH_DISTANCE = 60; // meters
+
+const eventBus = new EventTarget();
+
+eventBus.addEventListener("coin-hovered", (event) => {
+  const detail = (event as CustomEvent).detail;
+  const coin = detail.coin;
+  createCoinPopup(map, coin);
+});
+
+eventBus.addEventListener("coin-unhovered", () => {
+  map.closePopup();
+});
 
 // Create the map (element with id "map" is defined in index.html)
 const map = leaflet.map(mapDiv, {
@@ -78,7 +91,7 @@ world.renderNearbyCells(map, {
 });
 
 // Generate coins
-const coinGenerator = new CoinGenerator(world);
+const coinGenerator = new CoinGenerator(world, eventBus);
 coinGenerator.generateCoins();
 
 // Render coins on the map

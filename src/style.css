@@ -10,3 +10,13 @@
   width: 100%;
   height: 80vh;
 }
+
+.leaflet-popup-content-wrapper {
+  background: whitesmoke;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.leaflet-popup-tip-container {
+  display: none;
+}

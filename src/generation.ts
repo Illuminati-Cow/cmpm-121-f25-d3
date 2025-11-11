@@ -17,10 +17,18 @@ export interface Coin {
   sprite?: string; // Placeholder for procedural sprite
 }
 
+export type CoinHoveredEventDetail = {
+  coin: Coin;
+};
+
 export class CoinGenerator {
   private coins: Map<string, Coin> = new Map();
 
-  constructor(private world: World, private spawnProbability: number = 0.1) {}
+  constructor(
+    private world: World,
+    public coinEventBus: EventTarget,
+    private spawnProbability: number = 0.1,
+  ) {}
 
   generateCoins(): void {
     for (const cell of this.world.getAllCells()) {
@@ -70,15 +78,23 @@ export function renderCoins(
     });
     marker.addTo(map);
 
-    if (!withinReach) continue;
-    marker.bindPopup(() => {
-      const popupDiv = document.createElement("div");
-      popupDiv.innerHTML = `
-        <div>Coin at ${coin.cell.id}. Value: <span id="value">${coin.value}</span>.</div>
-        <button id="pickup">Pick Up</button>
-      `;
-      // TODO: Add pickup logic
-      return popupDiv;
-    });
+    if (!withinReach) {
+      marker.clearAllEventListeners();
+      continue;
+    }
+    marker.addEventListener(
+      "mouseover",
+      () =>
+        generator.coinEventBus.dispatchEvent(
+          new CustomEvent("coin-hovered", { detail: { coin } }),
+        ),
+    );
+    marker.addEventListener(
+      "mouseout",
+      () =>
+        generator.coinEventBus.dispatchEvent(
+          new CustomEvent("coin-unhovered", { detail: { coin } }),
+        ),
+    );
   }
 }
