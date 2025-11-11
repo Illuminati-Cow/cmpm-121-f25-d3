@@ -69,6 +69,9 @@ eventBus.addEventListener("coin-clicked", (event) => {
   if (inventory.hasItem()) {
     const oldCoin = inventory.coin;
     inventory.swapItem(craftCoin(oldCoin!, coin));
+    if ((inventory.coin?.value ?? 0) >= 256) {
+      alert("You have crafted a 256 coin and won the game!");
+    }
   } else {
     inventory.swapItem(coin);
   }
