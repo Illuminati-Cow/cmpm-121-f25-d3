@@ -9,6 +9,25 @@
 #map {
   width: 100%;
   height: 80vh;
+  position: relative;
+}
+
+#inventory {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -110%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.7);
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 1000;
 }
 
 .leaflet-popup-content-wrapper {

@@ -20,17 +20,24 @@ const inventory = new Inventory();
 
 // Create basic UI elements
 
-const controlPanelDiv = document.createElement("div");
-controlPanelDiv.id = "controlPanel";
-document.body.append(controlPanelDiv);
-
 const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 document.body.append(mapDiv);
 
-const statusPanelDiv = document.createElement("div");
-statusPanelDiv.id = "statusPanel";
-document.body.append(statusPanelDiv);
+const inventoryDiv = document.createElement("div");
+inventoryDiv.id = "inventory";
+document.body.append(inventoryDiv);
+
+function updateInventoryUI() {
+  if (inventory.hasItem()) {
+    inventoryDiv.innerHTML = `<div>${inventory.coin!.value}</div>`;
+  } else {
+    inventoryDiv.innerHTML = `<div>Empty</div>`;
+  }
+}
+
+// Initial update
+updateInventoryUI();
 
 // Our classroom location
 const CLASSROOM_LATLNG = leaflet.latLng(
@@ -65,6 +72,7 @@ eventBus.addEventListener("coin-clicked", (event) => {
   } else {
     inventory.swapItem(coin);
   }
+  updateInventoryUI();
   world.removeCoin(coin.id, map);
   eventBus.dispatchEvent(new CustomEvent("coin-unhovered"));
 });
@@ -107,15 +115,13 @@ map.addEventListener("click", (event) => {
     eventBus,
     map,
   );
+  updateInventoryUI();
 });
 
 // Add a marker to represent the player
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
-
-// Display the player's inventory
-statusPanelDiv.innerHTML = "No coins in inventory...";
 
 // Create world
 const world = new World(CLASSROOM_LATLNG);
