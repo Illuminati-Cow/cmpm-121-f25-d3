@@ -81,6 +81,58 @@ export class World {
     this.sharedData = new SharedCellData(origin);
   }
 
+  private drawHexPath(
+    ctx: CanvasRenderingContext2D,
+    cell: CellInstance,
+    map: leaflet.Map,
+    nw: leaflet.Point,
+  ): void {
+    ctx.beginPath();
+    const corners = cell.corners;
+    const firstPoint = map.latLngToContainerPoint(corners[0]);
+    ctx.moveTo(firstPoint.x - nw.x, firstPoint.y - nw.y);
+    for (let i = 1; i < corners.length; i++) {
+      const point = map.latLngToContainerPoint(corners[i]);
+      ctx.lineTo(point.x - nw.x, point.y - nw.y);
+    }
+    ctx.closePath();
+  }
+
+  private createHexOverlay(
+    map: leaflet.Map,
+    cells: CellInstance[],
+    drawCell: (
+      ctx: CanvasRenderingContext2D,
+      cell: CellInstance,
+      nw: leaflet.Point,
+    ) => void,
+  ): void {
+    if (cells.length === 0) return;
+
+    const allCorners = cells.flatMap((cell) => cell.corners);
+    const bounds = leaflet.latLngBounds(allCorners);
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const nw = map.latLngToContainerPoint(bounds.getNorthWest());
+    const se = map.latLngToContainerPoint(bounds.getSouthEast());
+    const width = Math.abs(se.x - nw.x);
+    const height = Math.abs(se.y - nw.y);
+
+    canvas.width = width;
+    canvas.height = height;
+
+    for (const cell of cells) {
+      drawCell(ctx, cell, nw);
+    }
+
+    const imgUrl = canvas.toDataURL();
+    const imageOverlay = leaflet.imageOverlay(imgUrl, bounds);
+    imageOverlay.addTo(map);
+  }
+
   generateCellsAround(centerQ: number, centerR: number): void {
     // Generate hex cells within the range using axial coordinates
     for (let q = centerQ - this.range; q <= centerQ + this.range; q++) {
@@ -131,6 +183,11 @@ export class World {
     map: leaflet.Map,
     playerRadius: PlayerRadius,
   ): void {
+    const nearbyCells = this.getNearbyCells(
+      playerRadius.position,
+      playerRadius.reach,
+    );
+
     const opacityFunction = (
       distance: number,
       minDistance: number,
@@ -148,20 +205,40 @@ export class World {
       // Linear interpolate between minWeight and maxWeight
       return minWeight + t * (maxWeight - minWeight);
     };
-    for (
-      const cell of this.getNearbyCells(
-        playerRadius.position,
-        playerRadius.reach,
-      )
-    ) {
+
+    this.createHexOverlay(map, nearbyCells, (ctx, cell, nw) => {
       const distance = playerRadius.position.distanceTo(cell.center);
-      const polygon = leaflet.polygon(cell.corners, {
-        color: "grey",
-        weight: opacityFunction(distance, 10, 60, 0.1, 0.4),
-        fillOpacity: 0.1,
-      });
-      polygon.addTo(map);
-    }
+      const weight = opacityFunction(distance, 10, 60, 0.1, 0.4);
+      ctx.lineWidth = weight;
+      ctx.fillStyle = "rgba(128, 128, 128, 0.1)";
+      ctx.strokeStyle = "grey";
+
+      this.drawHexPath(ctx, cell, map, nw);
+      ctx.fill();
+      ctx.stroke();
+    });
+  }
+
+  renderHexGrid(
+    map: leaflet.Map,
+    playerRadius: PlayerRadius,
+  ): void {
+    const allCells = this.getAllCells();
+    const nearbyCells = this.getNearbyCells(
+      playerRadius.position,
+      playerRadius.reach,
+    );
+    const distantCells = allCells.filter((cell) =>
+      !nearbyCells.some((nc) => nc.id === cell.id)
+    );
+
+    this.createHexOverlay(map, distantCells, (ctx, cell, nw) => {
+      ctx.strokeStyle = "lightgrey";
+      ctx.lineWidth = 1;
+
+      this.drawHexPath(ctx, cell, map, nw);
+      ctx.stroke();
+    });
   }
 
   // Coin management

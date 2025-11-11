@@ -16,6 +16,7 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [ ] Add player positioning: Track the player's current location (e.g., via simulated or real GPS), ensuring the map auto-centers on them and cells generate only near the player to optimize performance.
 - [x] Ensure deterministic world generation: Use a seeded random number generator (e.g., based on coordinates) to place objects consistently across loads, avoiding randomness that changes per session—pseudo-code: seed = hash(lat, lng); randomValue = seededRandom(seed).
 - [x] Render map objects: Make all game objects (e.g., coins) visible on the map without clicking, using shared or unique sprites for performance.
+- [x] Implement efficient cell grid rendering: Create `renderHexGrid` function using image overlay for distant cells, and modify `renderNearbyCells` to only render nearby cells with polygons for performance optimization.
 
 ## 3. Geocoins (Generation, Spawning, and History)
 
@@ -29,7 +30,7 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 
 - [x] Create inventory UI: Design a persistent on-screen GUI element (e.g., a fixed panel) showing the single inventory slot, displaying the held coin's sprite and value if present.
 - [ ] Implement coin pickup interaction: Detect proximity (set distance threshold), show a pop-up on click with coin details (value, history preview), and add a "Pick Up" button that moves the coin to inventory.
-- [ ] Visualize detection proximity radius by only rendering the cell overlay for cells within the player's reach, and render coins that are not within reach in grayscale.
+- [x] Visualize detection proximity radius by only rendering the cell overlay for cells within the player's reach, and render coins that are not within reach in grayscale.
 - [ ] Handle inventory conflicts: If holding a coin, show swap/craft options in the pop-up for new coins, using conditional UI logic to display buttons based on current inventory state.
 - [ ] Integrate with map: Ensure UI elements overlay the Leaflet map without interfering with scrolling or zooming.
 

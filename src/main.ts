@@ -127,16 +127,16 @@ playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
 // Create world
-const world = new World(CLASSROOM_LATLNG);
+const world = new World(CLASSROOM_LATLNG, 25);
 
 // Generate cells around origin
 world.generateCellsAround(0, 0);
 
 // Render nearby cell overlays
-world.renderNearbyCells(map, {
-  reach: PLAYER_REACH_DISTANCE,
-  position: CLASSROOM_LATLNG,
-});
+world.renderNearbyCells(map, playerRadius);
+
+// Render distant cell grid
+world.renderHexGrid(map, playerRadius);
 
 // Generate coins
 const coinGenerator = new CoinGenerator(world);
