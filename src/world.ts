@@ -158,7 +158,6 @@ export class World {
     return this.getCell(q, r);
   }
 
-  // Convert lat/lng to nearest hex coordinates (approximate)
   latLngToHex(lat: number, lng: number): { q: number; r: number } {
     const size = this.sharedData.size;
     const origin = this.sharedData.origin;
@@ -195,14 +194,10 @@ export class World {
       minWeight: number,
       maxWeight: number,
     ) => {
-      // Clamp distance to [minDistance, maxDistance]
       const clamped = Math.min(Math.max(distance, minDistance), maxDistance);
       const range = maxDistance - minDistance;
-      // If range is zero avoid division by zero and return minWeight
       if (range === 0) return minWeight;
-      // Normalize to [0,1]
       const t = 1 - (clamped - minDistance) / range;
-      // Linear interpolate between minWeight and maxWeight
       return minWeight + t * (maxWeight - minWeight);
     };
 
@@ -241,7 +236,6 @@ export class World {
     });
   }
 
-  // Coin management
   addCoin(
     coin: Coin,
     withinReach: boolean,

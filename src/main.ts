@@ -1,14 +1,11 @@
 // @deno-types="npm:@types/leaflet"
 import leaflet from "leaflet";
 
-// Style sheets
-import "leaflet/dist/leaflet.css"; // supporting style for Leaflet
-import "./style.css"; // student-controlled page style
+import "leaflet/dist/leaflet.css";
+import "./style.css";
 
-// Fix missing marker images
-import "./_leafletWorkaround.ts"; // fixes for missing Leaflet images
+import "./_leafletWorkaround.ts";
 
-// Import world generation
 import { World } from "./world.ts";
 
 // Import coin generation
@@ -36,10 +33,8 @@ function updateInventoryUI() {
   }
 }
 
-// Initial update
 updateInventoryUI();
 
-// Our classroom location
 const CLASSROOM_LATLNG = leaflet.latLng(
   36.997936938057016,
   -122.05703507501151,
@@ -84,7 +79,6 @@ eventBus.addEventListener("coin-unhovered", () => {
   map.closePopup();
 });
 
-// Create the map (element with id "map" is defined in index.html)
 const map = leaflet.map(mapDiv, {
   center: CLASSROOM_LATLNG,
   zoom: GAMEPLAY_ZOOM_LEVEL,
@@ -121,28 +115,19 @@ map.addEventListener("click", (event) => {
   updateInventoryUI();
 });
 
-// Add a marker to represent the player
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
-// Create world
 const world = new World(CLASSROOM_LATLNG, 25);
 
-// Generate cells around origin
 world.generateCellsAround(0, 0);
-
-// Render nearby cell overlays
 world.renderNearbyCells(map, playerRadius);
-
-// Render distant cell grid
 world.renderHexGrid(map, playerRadius);
 
-// Generate coins
 const coinGenerator = new CoinGenerator(world);
 coinGenerator.generateCoins();
 
-// Add coins to world
 for (const coin of coinGenerator.getCoins()) {
   const withinReach =
     playerRadius.position.distanceTo(coin.position) <= playerRadius.reach;
