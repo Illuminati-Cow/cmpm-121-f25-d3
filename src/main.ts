@@ -72,11 +72,17 @@ const world = new World(CLASSROOM_LATLNG);
 world.generateCellsAround(0, 0);
 
 // Render nearby cell overlays
-world.renderNearbyCells(map, CLASSROOM_LATLNG, PLAYER_REACH_DISTANCE);
+world.renderNearbyCells(map, {
+  reach: PLAYER_REACH_DISTANCE,
+  position: CLASSROOM_LATLNG,
+});
 
 // Generate coins
 const coinGenerator = new CoinGenerator(world);
 coinGenerator.generateCoins();
 
 // Render coins on the map
-renderCoins(coinGenerator, map);
+renderCoins(coinGenerator, map, {
+  position: CLASSROOM_LATLNG,
+  reach: PLAYER_REACH_DISTANCE,
+});

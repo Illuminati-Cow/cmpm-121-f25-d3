@@ -1,5 +1,6 @@
 // @deno-types="npm:@types/leaflet"
 import leaflet from "leaflet";
+import { PlayerRadius } from "./player.ts";
 
 export interface Cell {
   id: string;
@@ -118,8 +119,7 @@ export class World {
 
   renderNearbyCells(
     map: leaflet.Map,
-    playerPos: leaflet.LatLng,
-    reachDistance: number,
+    playerRadius: PlayerRadius,
   ): void {
     const opacityFunction = (
       distance: number,
@@ -138,8 +138,13 @@ export class World {
       // Linear interpolate between minWeight and maxWeight
       return minWeight + t * (maxWeight - minWeight);
     };
-    for (const cell of this.getNearbyCells(playerPos, reachDistance)) {
-      const distance = playerPos.distanceTo(cell.center);
+    for (
+      const cell of this.getNearbyCells(
+        playerRadius.position,
+        playerRadius.reach,
+      )
+    ) {
+      const distance = playerRadius.position.distanceTo(cell.center);
       const polygon = leaflet.polygon(cell.corners, {
         color: "grey",
         weight: opacityFunction(distance, 10, 60, 0.1, 0.4),
