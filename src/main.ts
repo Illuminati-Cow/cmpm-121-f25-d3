@@ -112,19 +112,28 @@ leaflet
 map.addEventListener("click", (event) => {
   const latlng = event.latlng;
   const cell = world.getCellAtLatLng(latlng);
-  if (!inventory.hasItem() || !cell) return;
+  if (!cell) return;
+
   const distance = cell.center.distanceTo(playerRadius.position);
   if (distance > PLAYER_REACH_DISTANCE) return;
-  inventory.coin!.position = cell.center;
-  inventory.coin!.cell = cell;
-  inventory.coin!.history.push(`Placed in cell ${cell.id}`);
-  world.addCoin(
-    inventory.removeItem()!,
-    true,
-    eventBus,
-    map,
-  );
-  updateInventoryUI();
+
+  const coinInCell = world.getCoinInCell(cell);
+  if (coinInCell) {
+    eventBus.dispatchEvent(
+      new CustomEvent("coin-clicked", { detail: { coin: coinInCell } }),
+    );
+  } else if (inventory.hasItem()) {
+    inventory.coin!.position = cell.center;
+    inventory.coin!.cell = cell;
+    inventory.coin!.history.push(`Placed in cell ${cell.id}`);
+    world.addCoin(
+      inventory.removeItem()!,
+      true,
+      eventBus,
+      map,
+    );
+    updateInventoryUI();
+  }
 });
 
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG);

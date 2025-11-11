@@ -76,6 +76,7 @@ export class World {
     string,
     { coin: Coin; marker: leaflet.CircleMarker }
   > = new Map();
+  private coinsByCell: Map<string, Coin> = new Map();
 
   constructor(origin: leaflet.LatLng, private range: number = 10) {
     this.sharedData = new SharedCellData(origin);
@@ -248,12 +249,14 @@ export class World {
       addCoinEventListeners(marker, coin, eventBus);
     }
     this.activeCoins.set(coin.id, { coin, marker });
+    this.coinsByCell.set(coin.cell.id, coin);
   }
 
   removeCoin(id: string, map: leaflet.Map): void {
     const entry = this.activeCoins.get(id);
     if (entry) {
       map.removeLayer(entry.marker);
+      this.coinsByCell.delete(entry.coin.cell.id);
       this.activeCoins.delete(id);
     }
   }
@@ -261,8 +264,17 @@ export class World {
   updateCoinPosition(id: string, newPosition: leaflet.LatLng): void {
     const entry = this.activeCoins.get(id);
     if (entry) {
+      const oldCellId = entry.coin.cell.id;
       entry.coin.position = newPosition;
       entry.marker.setLatLng(newPosition);
+
+      // Update cell if position changed to a different cell
+      const newCell = this.getCellAtLatLng(newPosition);
+      if (newCell && newCell.id !== oldCellId) {
+        entry.coin.cell = newCell;
+        this.coinsByCell.delete(oldCellId);
+        this.coinsByCell.set(newCell.id, entry.coin);
+      }
     }
   }
 
@@ -272,5 +284,9 @@ export class World {
 
   getCoinMarker(id: string): leaflet.CircleMarker | undefined {
     return this.activeCoins.get(id)?.marker;
+  }
+
+  getCoinInCell(cell: CellInstance): Coin | undefined {
+    return this.coinsByCell.get(cell.id);
   }
 }
