@@ -21,12 +21,27 @@ export type CoinHoveredEventDetail = {
   coin: Coin;
 };
 
+export function craftCoin(coinA: Coin, coinB: Coin): Coin {
+  const newValue = coinA.value + coinB.value;
+  const newCoin: Coin = {
+    id: `coin-${coinA.id}-${coinB.id}`,
+    value: newValue,
+    position: coinA.position, // For simplicity, use position of first coin
+    cell: coinA.cell,
+    history: [
+      ...coinA.history,
+      ...coinB.history,
+      `Crafted new coin with value ${newValue}`,
+    ],
+  };
+  return newCoin;
+}
+
 export class CoinGenerator {
   private coins: Map<string, Coin> = new Map();
 
   constructor(
     private world: World,
-    public coinEventBus: EventTarget,
     private spawnProbability: number = 0.1,
   ) {}
 
@@ -58,43 +73,69 @@ export class CoinGenerator {
   getCoin(id: string): Coin | undefined {
     return this.coins.get(id);
   }
+
+  removeCoin(id: string): Coin | undefined {
+    const coin = this.coins.get(id);
+    this.coins.delete(id);
+    return coin;
+  }
+}
+
+export function createCoinMarker(
+  coin: Coin,
+  withinReach: boolean,
+): leaflet.CircleMarker {
+  return leaflet.circleMarker(coin.position, {
+    color: withinReach ? "gold" : "gray",
+    fillColor: withinReach ? "yellow" : "white",
+    fillOpacity: withinReach ? 0.8 : 0.4,
+    opacity: withinReach ? 0.8 : 0.4,
+    radius: 5,
+  });
+}
+
+export function addCoinEventListeners(
+  marker: leaflet.CircleMarker,
+  coin: Coin,
+  eventBus: EventTarget,
+): void {
+  marker.addEventListener(
+    "mouseover",
+    () =>
+      eventBus.dispatchEvent(
+        new CustomEvent("coin-hovered", { detail: { coin } }),
+      ),
+  );
+  marker.addEventListener(
+    "mouseout",
+    () =>
+      eventBus.dispatchEvent(
+        new CustomEvent("coin-unhovered", { detail: { coin } }),
+      ),
+  );
+  marker.addEventListener("mousedown", () => {
+    eventBus.dispatchEvent(
+      new CustomEvent("coin-clicked", { detail: { coin } }),
+    );
+  });
 }
 
 export function renderCoins(
-  generator: CoinGenerator,
+  coins: Coin[],
   map: leaflet.Map,
   radius: PlayerRadius,
-): void {
-  for (const coin of generator.getCoins()) {
+  eventBus: EventTarget,
+): Map<string, leaflet.CircleMarker> {
+  const markers = new Map<string, leaflet.CircleMarker>();
+  for (const coin of coins) {
     const withinReach =
       radius.position.distanceTo(coin.position) <= radius.reach;
-    // For now, use a circle marker; later replace with sprite
-    const marker = leaflet.circleMarker(coin.position, {
-      color: withinReach ? "gold" : "gray",
-      fillColor: withinReach ? "yellow" : "white",
-      fillOpacity: withinReach ? 0.8 : 0.4,
-      opacity: withinReach ? 0.8 : 0.4,
-      radius: 5,
-    });
+    const marker = createCoinMarker(coin, withinReach);
     marker.addTo(map);
-
-    if (!withinReach) {
-      marker.clearAllEventListeners();
-      continue;
+    if (withinReach) {
+      addCoinEventListeners(marker, coin, eventBus);
     }
-    marker.addEventListener(
-      "mouseover",
-      () =>
-        generator.coinEventBus.dispatchEvent(
-          new CustomEvent("coin-hovered", { detail: { coin } }),
-        ),
-    );
-    marker.addEventListener(
-      "mouseout",
-      () =>
-        generator.coinEventBus.dispatchEvent(
-          new CustomEvent("coin-unhovered", { detail: { coin } }),
-        ),
-    );
+    markers.set(coin.id, marker);
   }
+  return markers;
 }

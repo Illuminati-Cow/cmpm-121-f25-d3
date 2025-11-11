@@ -12,8 +12,11 @@ import "./_leafletWorkaround.ts"; // fixes for missing Leaflet images
 import { World } from "./world.ts";
 
 // Import coin generation
-import { CoinGenerator, renderCoins } from "./generation.ts";
+import { CoinGenerator, craftCoin } from "./generation.ts";
+import { Inventory, PlayerRadius } from "./player.ts";
 import { createCoinPopup } from "./ui.ts";
+
+const inventory = new Inventory();
 
 // Create basic UI elements
 
@@ -41,10 +44,29 @@ const PLAYER_REACH_DISTANCE = 60; // meters
 
 const eventBus = new EventTarget();
 
+const playerRadius: PlayerRadius = {
+  position: CLASSROOM_LATLNG,
+  reach: PLAYER_REACH_DISTANCE,
+};
+
 eventBus.addEventListener("coin-hovered", (event) => {
   const detail = (event as CustomEvent).detail;
   const coin = detail.coin;
   createCoinPopup(map, coin);
+});
+
+eventBus.addEventListener("coin-clicked", (event) => {
+  const detail = (event as CustomEvent).detail;
+  const coin = detail.coin;
+
+  if (inventory.hasItem()) {
+    const oldCoin = inventory.coin;
+    inventory.swapItem(craftCoin(oldCoin!, coin));
+  } else {
+    inventory.swapItem(coin);
+  }
+  world.removeCoin(coin.id, map);
+  eventBus.dispatchEvent(new CustomEvent("coin-unhovered"));
 });
 
 eventBus.addEventListener("coin-unhovered", () => {
@@ -70,6 +92,23 @@ leaflet
   })
   .addTo(map);
 
+map.addEventListener("click", (event) => {
+  const latlng = event.latlng;
+  const cell = world.getCellAtLatLng(latlng);
+  if (!inventory.hasItem() || !cell) return;
+  const distance = cell.center.distanceTo(playerRadius.position);
+  if (distance > PLAYER_REACH_DISTANCE) return;
+  inventory.coin!.position = cell.center;
+  inventory.coin!.cell = cell;
+  inventory.coin!.history.push(`Placed in cell ${cell.id}`);
+  world.addCoin(
+    inventory.removeItem()!,
+    true,
+    eventBus,
+    map,
+  );
+});
+
 // Add a marker to represent the player
 const playerMarker = leaflet.marker(CLASSROOM_LATLNG);
 playerMarker.bindTooltip("That's you!");
@@ -91,11 +130,12 @@ world.renderNearbyCells(map, {
 });
 
 // Generate coins
-const coinGenerator = new CoinGenerator(world, eventBus);
+const coinGenerator = new CoinGenerator(world);
 coinGenerator.generateCoins();
 
-// Render coins on the map
-renderCoins(coinGenerator, map, {
-  position: CLASSROOM_LATLNG,
-  reach: PLAYER_REACH_DISTANCE,
-});
+// Add coins to world
+for (const coin of coinGenerator.getCoins()) {
+  const withinReach =
+    playerRadius.position.distanceTo(coin.position) <= playerRadius.reach;
+  world.addCoin(coin, withinReach, eventBus, map);
+}

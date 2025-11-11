@@ -1,5 +1,6 @@
 // @deno-types="npm:@types/leaflet"
 import leaflet from "leaflet";
+import { addCoinEventListeners, Coin, createCoinMarker } from "./generation.ts";
 import { PlayerRadius } from "./player.ts";
 
 export interface Cell {
@@ -71,6 +72,10 @@ export class CellInstance {
 export class World {
   private cells: Map<string, CellInstance> = new Map();
   private sharedData: SharedCellData;
+  private activeCoins: Map<
+    string,
+    { coin: Coin; marker: leaflet.CircleMarker }
+  > = new Map();
 
   constructor(origin: leaflet.LatLng, private range: number = 10) {
     this.sharedData = new SharedCellData(origin);
@@ -94,6 +99,11 @@ export class World {
 
   getAllCells(): CellInstance[] {
     return Array.from(this.cells.values());
+  }
+
+  getCellAtLatLng(latlng: leaflet.LatLng): CellInstance | undefined {
+    const { q, r } = this.latLngToHex(latlng.lat, latlng.lng);
+    return this.getCell(q, r);
   }
 
   // Convert lat/lng to nearest hex coordinates (approximate)
@@ -152,5 +162,44 @@ export class World {
       });
       polygon.addTo(map);
     }
+  }
+
+  // Coin management
+  addCoin(
+    coin: Coin,
+    withinReach: boolean,
+    eventBus: EventTarget,
+    map: leaflet.Map,
+  ): void {
+    const marker = createCoinMarker(coin, withinReach);
+    marker.addTo(map);
+    if (withinReach) {
+      addCoinEventListeners(marker, coin, eventBus);
+    }
+    this.activeCoins.set(coin.id, { coin, marker });
+  }
+
+  removeCoin(id: string, map: leaflet.Map): void {
+    const entry = this.activeCoins.get(id);
+    if (entry) {
+      map.removeLayer(entry.marker);
+      this.activeCoins.delete(id);
+    }
+  }
+
+  updateCoinPosition(id: string, newPosition: leaflet.LatLng): void {
+    const entry = this.activeCoins.get(id);
+    if (entry) {
+      entry.coin.position = newPosition;
+      entry.marker.setLatLng(newPosition);
+    }
+  }
+
+  getActiveCoins(): Coin[] {
+    return Array.from(this.activeCoins.values()).map((entry) => entry.coin);
+  }
+
+  getCoinMarker(id: string): leaflet.CircleMarker | undefined {
+    return this.activeCoins.get(id)?.marker;
   }
 }
