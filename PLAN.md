@@ -29,7 +29,7 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 
 - [ ] Create inventory UI: Design a persistent on-screen GUI element (e.g., a fixed panel) showing the single inventory slot, displaying the held coin's sprite and value if present.
 - [ ] Implement coin pickup interaction: Detect proximity (set distance threshold), show a pop-up on click with coin details (value, history preview), and add a "Pick Up" button that moves the coin to inventory.
-- [ ] Visualize detection proximity radius by only rendering the cell overlay for cells within the player's reach, and render coins that are not within reach in grayscale.
+- [x] Visualize detection proximity radius by only rendering the cell overlay for cells within the player's reach, and render coins that are not within reach in grayscale.
 - [ ] Handle inventory conflicts: If holding a coin, show swap/craft options in the pop-up for new coins, using conditional UI logic to display buttons based on current inventory state.
 - [ ] Integrate with map: Ensure UI elements overlay the Leaflet map without interfering with scrolling or zooming.
 

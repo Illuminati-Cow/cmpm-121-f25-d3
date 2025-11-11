@@ -6,6 +6,7 @@ import { CellInstance, World } from "./world.ts";
 
 // Import our luck function
 import luck from "./_luck.ts";
+import { PlayerRadius } from "./player.ts";
 
 export interface Coin {
   id: string;
@@ -51,17 +52,25 @@ export class CoinGenerator {
   }
 }
 
-export function renderCoins(generator: CoinGenerator, map: leaflet.Map): void {
+export function renderCoins(
+  generator: CoinGenerator,
+  map: leaflet.Map,
+  radius: PlayerRadius,
+): void {
   for (const coin of generator.getCoins()) {
+    const withinReach =
+      radius.position.distanceTo(coin.position) <= radius.reach;
     // For now, use a circle marker; later replace with sprite
     const marker = leaflet.circleMarker(coin.position, {
-      color: "gold",
-      fillColor: "yellow",
-      fillOpacity: 0.8,
+      color: withinReach ? "gold" : "gray",
+      fillColor: withinReach ? "yellow" : "white",
+      fillOpacity: withinReach ? 0.8 : 0.4,
+      opacity: withinReach ? 0.8 : 0.4,
       radius: 5,
     });
     marker.addTo(map);
 
+    if (!withinReach) continue;
     marker.bindPopup(() => {
       const popupDiv = document.createElement("div");
       popupDiv.innerHTML = `
