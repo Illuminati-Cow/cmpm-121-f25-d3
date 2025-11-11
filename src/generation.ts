@@ -6,7 +6,6 @@ import { CellInstance, World } from "./world.ts";
 
 // Import our luck function
 import luck from "./_luck.ts";
-import { PlayerRadius } from "./player.ts";
 
 export interface Coin {
   id: string;
@@ -91,6 +90,7 @@ export function createCoinMarker(
     fillOpacity: withinReach ? 0.8 : 0.4,
     opacity: withinReach ? 0.8 : 0.4,
     radius: 5,
+    className: "coin-spawn",
   });
 }
 
@@ -118,24 +118,4 @@ export function addCoinEventListeners(
       new CustomEvent("coin-clicked", { detail: { coin } }),
     );
   });
-}
-
-export function renderCoins(
-  coins: Coin[],
-  map: leaflet.Map,
-  radius: PlayerRadius,
-  eventBus: EventTarget,
-): Map<string, leaflet.CircleMarker> {
-  const markers = new Map<string, leaflet.CircleMarker>();
-  for (const coin of coins) {
-    const withinReach =
-      radius.position.distanceTo(coin.position) <= radius.reach;
-    const marker = createCoinMarker(coin, withinReach);
-    marker.addTo(map);
-    if (withinReach) {
-      addCoinEventListeners(marker, coin, eventBus);
-    }
-    markers.set(coin.id, marker);
-  }
-  return markers;
 }
