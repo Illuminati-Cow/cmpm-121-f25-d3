@@ -61,14 +61,26 @@ eventBus.addEventListener("coin-clicked", (event) => {
   const detail = (event as CustomEvent).detail;
   const coin = detail.coin;
 
-  if (inventory.hasItem()) {
+  if (inventory.hasItem() && inventory.coin!.value === coin.value) {
     const oldCoin = inventory.coin;
     inventory.swapItem(craftCoin(oldCoin!, coin));
     if ((inventory.coin?.value ?? 0) >= 256) {
       alert("You have crafted a 256 coin and won the game!");
     }
   } else {
-    inventory.swapItem(coin);
+    const oldCoin = inventory.swapItem(coin);
+    if (oldCoin) {
+      oldCoin.position = coin.position;
+      oldCoin.cell = coin.cell;
+      oldCoin.history.push(`Placed in cell ${coin.cell.id}`);
+      world.addCoin(
+        oldCoin,
+        playerRadius.position.distanceTo(oldCoin.position) <=
+          playerRadius.reach,
+        eventBus,
+        map,
+      );
+    }
   }
   updateInventoryUI();
   world.removeCoin(coin.id, map);
