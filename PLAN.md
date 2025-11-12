@@ -13,7 +13,7 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 
 - [x] Initialize the Leaflet map: Create a scrollable map instance centered on the player's location, using real-world coordinates as the base layer.
 - [x] Implement hexagonal cell division: Divide the map into cells with a bounding box of approximately 0.0001 degrees per side (roughly house-sized), using a hexagonal grid pattern for deterministic placement—pseudo-code: for each cell, calculate center from lat/lng offset, store as a data structure with id and bounds.
-- [ ] Add player positioning: Track the player's current location (e.g., via simulated or real GPS), ensuring the map auto-centers on them and cells generate only near the player to optimize performance.
+- [x] Add player positioning: Track the player's current location (e.g., via simulated or real GPS), ensuring the map auto-centers on them and cells generate only near the player to optimize performance.
 - [x] Ensure deterministic world generation: Use a seeded random number generator (e.g., based on coordinates) to place objects consistently across loads, avoiding randomness that changes per session—pseudo-code: seed = hash(lat, lng); randomValue = seededRandom(seed).
 - [x] Render map objects: Make all game objects (e.g., coins) visible on the map without clicking, using shared or unique sprites for performance.
 - [x] Implement efficient cell grid rendering: Create `renderHexGrid` function using image overlay for distant cells, and modify `renderNearbyCells` to only render nearby cells with polygons for performance optimization.

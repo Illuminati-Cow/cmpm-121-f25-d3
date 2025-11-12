@@ -11,6 +11,7 @@ import { World } from "./world.ts";
 // Import coin generation
 import { CoinGenerator, craftCoin } from "./generation.ts";
 import { Inventory, PlayerRadius } from "./player.ts";
+import { Positioning } from "./positioning.ts";
 import { createCoinPopup } from "./ui.ts";
 
 const inventory = new Inventory();
@@ -46,8 +47,22 @@ const PLAYER_REACH_DISTANCE = 60; // meters
 
 const eventBus = new EventTarget();
 
+const world = new World(leaflet.latLng(0, 0));
+
+const { q: centerQ, r: centerR } = world.latLngToHex(
+  CLASSROOM_LATLNG.lat,
+  CLASSROOM_LATLNG.lng,
+);
+world.generateCellsAround(centerQ, centerR, 25);
+
+// Snap player position to the center of the nearest cell
+const initialCell = world.getCellAtLatLng(CLASSROOM_LATLNG);
+const playerPosition = initialCell ? initialCell.center : CLASSROOM_LATLNG;
+
+const positioning = new Positioning(world, playerPosition);
+
 const playerRadius: PlayerRadius = {
-  position: CLASSROOM_LATLNG,
+  position: positioning.position,
   reach: PLAYER_REACH_DISTANCE,
 };
 
@@ -92,7 +107,7 @@ eventBus.addEventListener("coin-unhovered", () => {
 });
 
 const map = leaflet.map(mapDiv, {
-  center: CLASSROOM_LATLNG,
+  center: playerPosition,
   zoom: GAMEPLAY_ZOOM_LEVEL,
   minZoom: GAMEPLAY_ZOOM_LEVEL,
   maxZoom: GAMEPLAY_ZOOM_LEVEL,
@@ -137,17 +152,10 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
   }
 });
 
-const playerMarker = leaflet.marker(CLASSROOM_LATLNG);
+const playerMarker = leaflet.marker(playerPosition);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
-const world = new World(leaflet.latLng(0, 0));
-
-const { q: centerQ, r: centerR } = world.latLngToHex(
-  CLASSROOM_LATLNG.lat,
-  CLASSROOM_LATLNG.lng,
-);
-world.generateCellsAround(centerQ, centerR, 25);
 world.renderNearbyCells(map, playerRadius);
 world.renderHexGrid(map, playerRadius);
 console.log(world);
