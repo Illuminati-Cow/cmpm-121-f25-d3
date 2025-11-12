@@ -77,6 +77,7 @@ export class World {
     { coin: Coin; marker: leaflet.CircleMarker }
   > = new Map();
   private coinsByCell: Map<string, Coin> = new Map();
+  private overlays: leaflet.ImageOverlay[] = [];
 
   constructor(origin: leaflet.LatLng) {
     this.sharedData = new SharedCellData(origin);
@@ -132,6 +133,12 @@ export class World {
     const imgUrl = canvas.toDataURL();
     const imageOverlay = leaflet.imageOverlay(imgUrl, bounds);
     imageOverlay.addTo(map);
+    this.overlays.push(imageOverlay);
+  }
+
+  clearOverlays(map: leaflet.Map): void {
+    this.overlays.forEach((overlay) => map.removeLayer(overlay));
+    this.overlays = [];
   }
 
   generateCellsAround(centerQ: number, centerR: number, range: number): void {
@@ -290,5 +297,19 @@ export class World {
 
   getCoinInCell(cell: CellInstance): Coin | undefined {
     return this.coinsByCell.get(cell.id);
+  }
+
+  updateCoinReaches(playerRadius: PlayerRadius): void {
+    for (const [_id, entry] of this.activeCoins) {
+      const withinReach =
+        playerRadius.position.distanceTo(entry.coin.position) <=
+          playerRadius.reach;
+      entry.marker.setStyle({
+        color: withinReach ? "gold" : "gray",
+        fillColor: withinReach ? "yellow" : "white",
+        fillOpacity: withinReach ? 0.8 : 0.4,
+        opacity: withinReach ? 0.8 : 0.4,
+      });
+    }
   }
 }

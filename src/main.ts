@@ -114,7 +114,9 @@ eventBus.addEventListener("move-player", (event) => {
   playerRadius.position = positioning.position;
   playerMarker.setLatLng(positioning.position);
   map.panTo(positioning.position);
+  world.updateCoinReaches(playerRadius);
   // Re-render cells if needed (for now, assume within range)
+  world.clearOverlays(map);
   world.renderNearbyCells(map, playerRadius);
   world.renderHexGrid(map, playerRadius);
 });
@@ -172,6 +174,7 @@ playerMarker.addTo(map);
 playerMarker.bindPopup(createMovementButtons(eventBus));
 playerMarker.openPopup();
 
+world.clearOverlays(map);
 world.renderNearbyCells(map, playerRadius);
 world.renderHexGrid(map, playerRadius);
 console.log(world);
