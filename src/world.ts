@@ -78,7 +78,7 @@ export class World {
   > = new Map();
   private coinsByCell: Map<string, Coin> = new Map();
 
-  constructor(origin: leaflet.LatLng, private range: number = 10) {
+  constructor(origin: leaflet.LatLng) {
     this.sharedData = new SharedCellData(origin);
   }
 
@@ -134,14 +134,16 @@ export class World {
     imageOverlay.addTo(map);
   }
 
-  generateCellsAround(centerQ: number, centerR: number): void {
+  generateCellsAround(centerQ: number, centerR: number, range: number): void {
     // Generate hex cells within the range using axial coordinates
-    for (let q = centerQ - this.range; q <= centerQ + this.range; q++) {
-      const r1 = Math.max(centerR - this.range, -q - centerR - this.range);
-      const r2 = Math.min(centerR + this.range, -q - centerR + this.range);
-      for (let r = r1; r <= r2; r++) {
-        const cell = new CellInstance(q, r, this.sharedData);
-        this.cells.set(cell.id, cell);
+    for (let q = centerQ - range; q <= centerQ + range; q++) {
+      for (let r = centerR - range; r <= centerR + range; r++) {
+        const distance = (Math.abs(q - centerQ) + Math.abs(r - centerR) +
+          Math.abs((q - centerQ) + (r - centerR))) / 2;
+        if (distance <= range) {
+          const cell = new CellInstance(q, r, this.sharedData);
+          this.cells.set(cell.id, cell);
+        }
       }
     }
   }

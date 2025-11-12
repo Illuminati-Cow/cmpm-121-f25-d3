@@ -1,5 +1,5 @@
 // @deno-types="npm:@types/leaflet"
-import leaflet from "leaflet";
+import leaflet, { LatLng } from "leaflet";
 
 import "leaflet/dist/leaflet.css";
 import "./style.css";
@@ -109,7 +109,7 @@ leaflet
   })
   .addTo(map);
 
-map.addEventListener("click", (event) => {
+map.addEventListener("click", (event: { latlng: LatLng }) => {
   const latlng = event.latlng;
   const cell = world.getCellAtLatLng(latlng);
   if (!cell) return;
@@ -118,6 +118,7 @@ map.addEventListener("click", (event) => {
   if (distance > PLAYER_REACH_DISTANCE) return;
 
   const coinInCell = world.getCoinInCell(cell);
+  console.log(coinInCell);
   if (coinInCell) {
     eventBus.dispatchEvent(
       new CustomEvent("coin-clicked", { detail: { coin: coinInCell } }),
@@ -140,11 +141,17 @@ const playerMarker = leaflet.marker(CLASSROOM_LATLNG);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
 
-const world = new World(CLASSROOM_LATLNG, 25);
+const world = new World(leaflet.latLng(0, 0));
 
-world.generateCellsAround(0, 0);
+const { q: centerQ, r: centerR } = world.latLngToHex(
+  CLASSROOM_LATLNG.lat,
+  CLASSROOM_LATLNG.lng,
+);
+world.generateCellsAround(centerQ, centerR, 25);
 world.renderNearbyCells(map, playerRadius);
 world.renderHexGrid(map, playerRadius);
+console.log(world);
+world.getAllCells().forEach((cell) => console.log(cell.id, cell.center));
 
 const coinGenerator = new CoinGenerator(world);
 coinGenerator.generateCoins();
