@@ -1,8 +1,8 @@
 # Development Plan for Geocoin Collection Game Demo
 
-Based on the REQUIREMENTS.md document, this is a high-level development plan for the singleplayer geocoin collection game demo. The plan is structured around the key features and assignment details (focusing on D3.a), with tasks split into logical sections for clarity. Each section includes a markdown checklist of actionable tasks. Tasks are designed to be incremental, starting from foundational setup and progressing to feature implementation. I've avoided any actual code, using pseudo-code only where it helps clarify a critical algorithm or data structure decision (e.g., for deterministic generation or crafting logic).
+Based on the REQUIREMENTS.md document, this is a high-level development plan for the singleplayer geocoin collection game demo. The plan is structured around the key features and assignment details (focusing on D3.a and D3.b), with tasks split into logical sections for clarity. Each section includes a markdown checklist of actionable tasks. Tasks are designed to be incremental, starting from foundational setup and progressing to feature implementation. I've avoided any actual code, using pseudo-code only where it helps clarify a critical algorithm or data structure decision (e.g., for deterministic generation or crafting logic).
 
-This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as specified. Prioritize tasks that establish the game world and core mechanics first, then layer on UI and end conditions. Use feature flags (e.g., a boolean toggle) to enable/disable original game design elements during D3.a development, allowing the base game to remain intact.
+This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as specified. Prioritize tasks that establish the game world and core mechanics first, then layer on UI and end conditions. Use feature flags (e.g., a boolean toggle) to enable/disable original game design elements during D3.a and D3.b development, allowing the base game to remain intact.
 
 ## 1. Project Setup and Technologies
 
@@ -17,6 +17,10 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [x] Ensure deterministic world generation: Use a seeded random number generator (e.g., based on coordinates) to place objects consistently across loads, avoiding randomness that changes per session—pseudo-code: seed = hash(lat, lng); randomValue = seededRandom(seed).
 - [x] Render map objects: Make all game objects (e.g., coins) visible on the map without clicking, using shared or unique sprites for performance.
 - [x] Implement efficient cell grid rendering: Create `renderHexGrid` function using image overlay for distant cells, and modify `renderNearbyCells` to only render nearby cells with polygons for performance optimization.
+- [ ] Implement earth-spanning coordinate system: Anchor the grid at Null Island (0° latitude, 0° longitude) for consistent global positioning.
+- [ ] Add simulated player movement: Include UI buttons for moving north/south/east/west by one grid step, updating player position and map centering accordingly.
+- [ ] Implement cell visibility and memorylessness: Cells spawn/despawn to keep the screen full as the player moves or scrolls; cells forget their state (e.g., coin placements) when out of visibility, allowing farming by moving in/out of range.
+- [ ] Restrict interactions to nearby cells: Only cells near the player's current location are interactive; distant cells are visible but not manipulable.
 
 ## 3. Geocoins (Generation, Spawning, and History)
 
@@ -25,6 +29,7 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [x] Handle coin spawning: Place coins deterministically within cells, ensuring one per cell or sparse distribution, and limit to visible/nearby areas for efficiency.
 - [ ] Track coin history: Update the history array on interactions (e.g., pickup: add {action: 'picked_up', location: latLng}; placement: add {action: 'placed', location: latLng}).
 - [ ] Enforce carrying limit: Prevent picking up more than one coin at a time, using a simple state check in the player's inventory.
+- [ ] Implement memoryless coin state: When cells despawn, reset coin states (e.g., remove placed coins) so they regenerate on re-entry, enabling farming mechanics.
 
 ## 4. Inventory and UI
 
@@ -33,6 +38,7 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [x] Visualize detection proximity radius by only rendering the cell overlay for cells within the player's reach, and render coins that are not within reach in grayscale.
 - [ ] Handle inventory conflicts: If holding a coin, show swap/craft options in the pop-up for new coins, using conditional UI logic to display buttons based on current inventory state.
 - [ ] Integrate with map: Ensure UI elements overlay the Leaflet map without interfering with scrolling or zooming.
+- [ ] Add movement simulation buttons: Create UI buttons (e.g., north, south, east, west) to simulate player movement by one grid step, updating position and triggering cell updates.
 
 ## 5. Crafting
 
