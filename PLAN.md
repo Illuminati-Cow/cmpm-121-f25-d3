@@ -18,7 +18,7 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [x] Render map objects: Make all game objects (e.g., coins) visible on the map without clicking, using shared or unique sprites for performance.
 - [x] Implement efficient cell grid rendering: Create `renderHexGrid` function using image overlay for distant cells, and modify `renderNearbyCells` to only render nearby cells with polygons for performance optimization.
 - [x] Implement earth-spanning coordinate system: Anchor the grid at Null Island (0° latitude, 0° longitude) for consistent global positioning.
-- [ ] Add simulated player movement: Include UI buttons for moving north/south/east/west by one grid step, updating player position and map centering accordingly.
+- [x] Add simulated player movement: Include UI buttons for moving north/south/east/west by one grid step, updating player position and map centering accordingly.
 - [ ] Implement cell visibility and memorylessness: Cells spawn/despawn to keep the screen full as the player moves or scrolls; cells forget their state (e.g., coin placements) when out of visibility, allowing farming by moving in/out of range.
 - [ ] Restrict interactions to nearby cells: Only cells near the player's current location are interactive; distant cells are visible but not manipulable.
 

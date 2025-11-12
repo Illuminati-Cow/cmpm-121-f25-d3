@@ -61,3 +61,30 @@
     opacity: 1;
   }
 }
+
+.movement-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(3, 40px);
+  gap: 5px;
+  justify-items: center;
+  align-items: center;
+}
+
+.movement-buttons button {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.movement-buttons button:hover {
+  background-color: #0056b3;
+}

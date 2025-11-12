@@ -11,8 +11,8 @@ import { World } from "./world.ts";
 // Import coin generation
 import { CoinGenerator, craftCoin } from "./generation.ts";
 import { Inventory, PlayerRadius } from "./player.ts";
-import { Positioning } from "./positioning.ts";
-import { createCoinPopup } from "./ui.ts";
+import { Direction, Positioning } from "./positioning.ts";
+import { createCoinPopup, createMovementButtons } from "./ui.ts";
 
 const inventory = new Inventory();
 
@@ -106,6 +106,19 @@ eventBus.addEventListener("coin-unhovered", () => {
   map.closePopup();
 });
 
+eventBus.addEventListener("move-player", (event) => {
+  const detail = (event as CustomEvent).detail;
+  const direction = detail.direction as Direction;
+  positioning.move(direction);
+  // Update player position
+  playerRadius.position = positioning.position;
+  playerMarker.setLatLng(positioning.position);
+  map.panTo(positioning.position);
+  // Re-render cells if needed (for now, assume within range)
+  world.renderNearbyCells(map, playerRadius);
+  world.renderHexGrid(map, playerRadius);
+});
+
 const map = leaflet.map(mapDiv, {
   center: playerPosition,
   zoom: GAMEPLAY_ZOOM_LEVEL,
@@ -155,6 +168,9 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
 const playerMarker = leaflet.marker(playerPosition);
 playerMarker.bindTooltip("That's you!");
 playerMarker.addTo(map);
+
+playerMarker.bindPopup(createMovementButtons(eventBus));
+playerMarker.openPopup();
 
 world.renderNearbyCells(map, playerRadius);
 world.renderHexGrid(map, playerRadius);

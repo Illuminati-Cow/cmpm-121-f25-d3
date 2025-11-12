@@ -18,3 +18,58 @@ export function createCoinPopup(map: Map, coin: Coin): HTMLElement {
   });
   return container;
 }
+
+export function createMovementButtons(eventBus: EventTarget): HTMLElement {
+  const container = document.createElement("div");
+  container.className = "movement-buttons";
+
+  const directions = [
+    ["northwest", "↖"],
+    ["north", "↑"],
+    ["northeast", "↗"],
+    ["southwest", "↙"],
+    ["south", "↓"],
+    ["southeast", "↘"],
+  ];
+
+  container.appendChild(
+    createButton(directions[0][0], directions[0][1], eventBus),
+  );
+  container.appendChild(
+    createButton(directions[1][0], directions[1][1], eventBus),
+  );
+  container.appendChild(
+    createButton(directions[2][0], directions[2][1], eventBus),
+  );
+
+  container.appendChild(document.createElement("p"));
+  container.appendChild(document.createElement("p"));
+  container.appendChild(document.createElement("p"));
+
+  container.appendChild(
+    createButton(directions[3][0], directions[3][1], eventBus),
+  );
+  container.appendChild(
+    createButton(directions[4][0], directions[4][1], eventBus),
+  );
+  container.appendChild(
+    createButton(directions[5][0], directions[5][1], eventBus),
+  );
+
+  return container;
+
+  function createButton(
+    direction: string,
+    symbol: string,
+    eventBus: EventTarget,
+  ): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.textContent = symbol;
+    button.onclick = () => {
+      eventBus.dispatchEvent(
+        new CustomEvent("move-player", { detail: { direction } }),
+      );
+    };
+    return button;
+  }
+}

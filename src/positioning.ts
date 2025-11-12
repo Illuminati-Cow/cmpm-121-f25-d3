@@ -13,14 +13,14 @@ export type Direction =
   | "northwest";
 
 const directionDeltas: Record<Direction, { dq: number; dr: number }> = {
-  north: { dq: 0, dr: -1 }, // Approximate north as northwest
-  northeast: { dq: 1, dr: -1 },
+  north: { dq: 0, dr: 1 },
+  northeast: { dq: 1, dr: 0 },
   east: { dq: 1, dr: 0 },
-  southeast: { dq: 0, dr: 1 },
-  south: { dq: 0, dr: 1 }, // Approximate south as southeast
-  southwest: { dq: -1, dr: 1 },
+  southeast: { dq: 1, dr: -1 },
+  south: { dq: 0, dr: -1 },
+  southwest: { dq: -1, dr: 0 },
   west: { dq: -1, dr: 0 },
-  northwest: { dq: 0, dr: -1 }, // Same as north
+  northwest: { dq: -1, dr: 1 },
 };
 
 export class Positioning {
