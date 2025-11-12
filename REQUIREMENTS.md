@@ -56,11 +56,11 @@ This assignment is known as Demo 3, or D3, with each step split into a lettered 
 
 ### D3.b
 
-- The interface offers some buttons to simulate local player movement (e.g. to move north/south/east/west by one grid step).  
-- As the player moves, cells continue to be visible all the way out to the edge of the map (i.e. they spawn/despawn as necessary to keep the screen full).  
+- The interface offers some buttons to simulate local player movement (e.g. to move north/south/east/west by one grid step).
+- As the player moves, cells continue to be visible all the way out to the edge of the map (i.e. they spawn/despawn as necessary to keep the screen full).
 - The representation of grid cells uses an earth-spanning coordinate system anchored at Null Island (zero latitude, zero longitude).
 
-- Map:  
-  - The player can move their character about the map or simply scroll the map without moving their character, seeing cells wherever they go.  
-  - As the character moves, only the cells near to their current location are available for interaction.  
-  - Cells should appear to be memoryless in the sense that they forget their state when they are no longer visible on the screen. As a result, the player should be able to farm tokens by moving into and out of the visibility range of a cell. (This behavior will be robustly fixed in the next assignment.)  
+- Map:
+  - The player can move their character about the map or simply scroll the map without moving their character, seeing cells wherever they go.
+  - As the character moves, only the cells near to their current location are available for interaction.
+  - Cells should appear to be memoryless in the sense that they forget their state when they are no longer visible on the screen. As a result, the player should be able to farm tokens by moving into and out of the visibility range of a cell. (This behavior will be robustly fixed in the next assignment.)
