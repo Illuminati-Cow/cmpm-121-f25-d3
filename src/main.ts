@@ -12,7 +12,12 @@ import { World } from "./world.ts";
 import { CoinGenerator, craftCoin } from "./generation.ts";
 import { Inventory, PlayerRadius } from "./player.ts";
 import { Direction, Positioning } from "./positioning.ts";
-import { createCoinPopup, createMovementButtons } from "./ui.ts";
+import {
+  createCoinPopup,
+  createInventoryUI,
+  createMovementButtons,
+  updateInventoryUI,
+} from "./ui.ts";
 
 const inventory = new Inventory();
 
@@ -21,20 +26,10 @@ const inventory = new Inventory();
 const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 document.body.append(mapDiv);
+const inventoryUI = createInventoryUI();
+mapDiv.append(inventoryUI);
 
-const inventoryDiv = document.createElement("div");
-inventoryDiv.id = "inventory";
-document.body.append(inventoryDiv);
-
-function updateInventoryUI() {
-  if (inventory.hasItem()) {
-    inventoryDiv.innerHTML = `<div>${inventory.coin!.value}</div>`;
-  } else {
-    inventoryDiv.innerHTML = `<div>Empty</div>`;
-  }
-}
-
-updateInventoryUI();
+updateInventoryUI(inventory);
 
 const CLASSROOM_LATLNG = leaflet.latLng(
   36.997936938057016,
@@ -97,7 +92,7 @@ eventBus.addEventListener("coin-clicked", (event) => {
       );
     }
   }
-  updateInventoryUI();
+  updateInventoryUI(inventory);
   world.removeCoin(coin.id, map);
   eventBus.dispatchEvent(new CustomEvent("coin-unhovered"));
 });
@@ -176,7 +171,7 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
       eventBus,
       map,
     );
-    updateInventoryUI();
+    updateInventoryUI(inventory);
   }
 });
 

@@ -1,5 +1,27 @@
 import { Map } from "leaflet";
 import { Coin } from "./generation.ts";
+import { Inventory } from "./player.ts";
+
+let inventoryDiv: HTMLElement;
+
+export function createInventoryUI(): HTMLElement {
+  if (inventoryDiv) return inventoryDiv;
+  const container = document.createElement("div");
+  container.id = "inventory";
+  container.innerHTML = `<h3>Inventory</h3>
+    <div id="inventory-item">Empty</div>
+  `;
+  inventoryDiv = container as HTMLElement;
+  return container;
+}
+
+export function updateInventoryUI(inventory: Inventory): void {
+  if (inventory.hasItem()) {
+    inventoryDiv.innerHTML = `<div>${inventory.coin!.value}</div>`;
+  } else {
+    inventoryDiv.innerHTML = `<div>Empty</div>`;
+  }
+}
 
 export function createCoinPopup(map: Map, coin: Coin): HTMLElement {
   const container = document.createElement("div");
