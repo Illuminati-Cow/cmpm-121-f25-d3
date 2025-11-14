@@ -95,7 +95,7 @@ eventBus.addEventListener("coin-unhovered", () => {
   map.closePopup();
 });
 
-const coinGenerator = new CoinGenerator(world);
+const coinGenerator = new CoinGenerator();
 
 eventBus.addEventListener("move-player", (event) => {
   const detail = (event as CustomEvent).detail;
@@ -104,11 +104,11 @@ eventBus.addEventListener("move-player", (event) => {
   playerRadius.position = positioning.position;
   playerMarker.setLatLng(positioning.position);
   map.panTo(positioning.position);
-  const { q, r } = world.latLngToHex(
+  const coord = world.latLngToHex(
     positioning.position.lat,
     positioning.position.lng,
   );
-  const addedCells = world.updateCellsAround(q, r, 10, map);
+  const addedCells = world.updateCellsAround(coord, 10, map);
   for (const cell of addedCells) {
     const coin = coinGenerator.generateCoinForCell(cell);
     if (coin) {

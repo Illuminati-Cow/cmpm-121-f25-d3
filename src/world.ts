@@ -3,10 +3,25 @@ import leaflet from "leaflet";
 import { addCoinEventListeners, Coin, createCoinMarker } from "./generation.ts";
 import { PlayerRadius } from "./player.ts";
 
-export interface Cell {
-  id: string;
+export type HexCoord = {
   q: number;
   r: number;
+};
+export function HexCoord(q: number, r: number): HexCoord {
+  return { q, r };
+}
+
+export type Range = {
+  min: number;
+  max: number;
+};
+export function Range(min: number, max: number): Range {
+  return { min, max };
+}
+
+export interface Cell {
+  id: string;
+  coord: HexCoord;
   center: leaflet.LatLng;
   bounds: leaflet.LatLngBounds;
 }
@@ -46,11 +61,23 @@ export class SharedCellData {
 }
 
 export class CellInstance {
+  public coord: HexCoord;
+
   constructor(
-    public q: number,
-    public r: number,
+    q: number,
+    r: number,
     private shared: SharedCellData,
-  ) {}
+  ) {
+    this.coord = { q, r };
+  }
+
+  get q(): number {
+    return this.coord.q;
+  }
+
+  get r(): number {
+    return this.coord.r;
+  }
 
   get id(): string {
     return `${this.q},${this.r}`;
@@ -70,7 +97,14 @@ export class CellInstance {
 }
 
 export class World {
-  private cells: Map<string, CellInstance> = new Map();
+  private static readonly CELL_SIZE = 4;
+  private static readonly CELL_Q_OFFSET = 0;
+  private static readonly CELL_R_OFFSET = 1;
+  private static readonly CELL_LAT_OFFSET = 2;
+  private static readonly CELL_LNG_OFFSET = 3;
+  private cellBuffer: Float32Array;
+  private cellCount: number = 0;
+  private bufferSize: number = 1000; // initial size
   private sharedData: SharedCellData;
   private activeCoins: Map<
     string,
@@ -81,6 +115,7 @@ export class World {
 
   constructor(origin: leaflet.LatLng) {
     this.sharedData = new SharedCellData(origin);
+    this.cellBuffer = new Float32Array(this.bufferSize * World.CELL_SIZE);
   }
 
   private drawHexPath(
@@ -144,61 +179,75 @@ export class World {
   }
 
   updateCellsAround(
-    centerQ: number,
-    centerR: number,
+    centerCoord: HexCoord,
     range: number,
     map: leaflet.Map,
   ): CellInstance[] {
-    const newCells = new Map<string, CellInstance>();
+    const existingCellIds = new Set<string>();
+    for (
+      let index = 0;
+      index < this.cellCount * World.CELL_SIZE;
+      index += World.CELL_SIZE
+    ) {
+      const q = this.cellBuffer[index + World.CELL_Q_OFFSET];
+      const r = this.cellBuffer[index + World.CELL_R_OFFSET];
+      existingCellIds.add(`${q},${r}`);
+    }
+    // Clear existing cells
+    this.cellCount = 0;
+
+    const addedCells = new Set<string>();
     // Generate new cells within range
-    for (let q = centerQ - range; q <= centerQ + range; q++) {
-      for (let r = centerR - range; r <= centerR + range; r++) {
-        const distance = (Math.abs(q - centerQ) + Math.abs(r - centerR) +
-          Math.abs((q - centerQ) + (r - centerR))) / 2;
+    for (let q = centerCoord.q - range; q <= centerCoord.q + range; q++) {
+      for (let r = centerCoord.r - range; r <= centerCoord.r + range; r++) {
+        const distance =
+          (Math.abs(q - centerCoord.q) + Math.abs(r - centerCoord.r) +
+            Math.abs((q - centerCoord.q) + (r - centerCoord.r))) / 2;
         if (distance <= range) {
-          const cell = new CellInstance(q, r, this.sharedData);
-          newCells.set(cell.id, cell);
+          // Check if buffer needs resizing
+          if (this.cellCount * World.CELL_SIZE >= this.cellBuffer.length) {
+            const newBuffer = new Float32Array(this.cellBuffer.length * 2);
+            newBuffer.set(this.cellBuffer);
+            this.cellBuffer = newBuffer;
+          }
+          const index = this.cellCount * World.CELL_SIZE;
+          this.cellBuffer[index + World.CELL_Q_OFFSET] = q;
+          this.cellBuffer[index + World.CELL_R_OFFSET] = r;
+          const center = this.sharedData.getCenter(q, r);
+          this.cellBuffer[index + World.CELL_LAT_OFFSET] = center.lat;
+          this.cellBuffer[index + World.CELL_LNG_OFFSET] = center.lng;
+          this.cellCount++;
+          addedCells.add(`${q},${r}`);
         }
       }
     }
 
-    // Remove cells that are no longer in range
-    for (const [id, _cell] of this.cells) {
-      if (!newCells.has(id)) {
-        // Remove coin if exists
-        const coin = this.coinsByCell.get(id);
-        if (coin) {
-          this.removeCoin(coin.id, map);
-        }
-        this.cells.delete(id);
+    for (const cellId of existingCellIds.difference(addedCells)) {
+      const coin = this.coinsByCell.get(cellId);
+      console.log(coin);
+      if (coin) {
+        this.removeCoin(coin.id, map);
       }
     }
 
-    // Add new cells and collect them
-    const addedCells: CellInstance[] = [];
-    for (const [id, cell] of newCells) {
-      if (!this.cells.has(id)) {
-        this.cells.set(id, cell);
-        addedCells.push(cell);
-      }
-    }
-    return addedCells;
+    return Array.from(addedCells.difference(existingCellIds)).map(
+      (coord) => {
+        const [qStr, rStr] = coord.split(",");
+        return new CellInstance(Number(qStr), Number(rStr), this.sharedData);
+      },
+    );
   }
 
   getCell(q: number, r: number): CellInstance | undefined {
-    return this.cells.get(`${q},${r}`);
-  }
-
-  getAllCells(): CellInstance[] {
-    return Array.from(this.cells.values());
+    return new CellInstance(q, r, this.sharedData);
   }
 
   getCellAtLatLng(latlng: leaflet.LatLng): CellInstance | undefined {
-    const { q, r } = this.latLngToHex(latlng.lat, latlng.lng);
-    return this.getCell(q, r);
+    const coord = this.latLngToHex(latlng.lat, latlng.lng);
+    return this.getCell(coord.q, coord.r);
   }
 
-  latLngToHex(lat: number, lng: number): { q: number; r: number } {
+  latLngToHex(lat: number, lng: number): HexCoord {
     const size = this.sharedData.size;
     const origin = this.sharedData.origin;
     const x = lng - origin.lng;
@@ -213,9 +262,22 @@ export class World {
     playerPos: leaflet.LatLng,
     reachDistance: number,
   ): CellInstance[] {
-    return this.getAllCells().filter((cell) =>
-      playerPos.distanceTo(cell.center) < reachDistance
-    );
+    const nearby: CellInstance[] = [];
+    for (
+      let index = 0;
+      index < this.cellCount * World.CELL_SIZE;
+      index += World.CELL_SIZE
+    ) {
+      const lat = this.cellBuffer[index + World.CELL_LAT_OFFSET];
+      const lng = this.cellBuffer[index + World.CELL_LNG_OFFSET];
+      const center = leaflet.latLng(lat, lng);
+      if (playerPos.distanceTo(center) < reachDistance) {
+        const q = this.cellBuffer[index + World.CELL_Q_OFFSET];
+        const r = this.cellBuffer[index + World.CELL_R_OFFSET];
+        nearby.push(new CellInstance(q, r, this.sharedData));
+      }
+    }
+    return nearby;
   }
 
   renderNearbyCells(
@@ -229,16 +291,17 @@ export class World {
 
     const opacityFunction = (
       distance: number,
-      minDistance: number,
-      maxDistance: number,
-      minWeight: number,
-      maxWeight: number,
+      distanceRange: Range,
+      weightRange: Range,
     ) => {
-      const clamped = Math.min(Math.max(distance, minDistance), maxDistance);
-      const range = maxDistance - minDistance;
-      if (range === 0) return minWeight;
-      const t = 1 - (clamped - minDistance) / range;
-      return minWeight + t * (maxWeight - minWeight);
+      const clamped = Math.min(
+        Math.max(distance, distanceRange.min),
+        distanceRange.max,
+      );
+      const range = distanceRange.max - distanceRange.min;
+      if (range === 0) return weightRange.min;
+      const t = 1 - (clamped - distanceRange.min) / range;
+      return weightRange.min + t * (weightRange.max - weightRange.min);
     };
 
     const nearbyQRs = nearbyCells.map((cell) => ({ q: cell.q, r: cell.r }));
@@ -246,7 +309,11 @@ export class World {
       const distance = playerRadius.position.distanceTo(
         this.sharedData.getCenter(qr.q, qr.r),
       );
-      const weight = opacityFunction(distance, 10, 60, 0.1, 0.4);
+      const weight = opacityFunction(
+        distance,
+        { min: 10, max: 60 },
+        { min: 0.1, max: 0.4 },
+      );
       ctx.lineWidth = weight;
       ctx.fillStyle = "rgba(128, 128, 128, 0.1)";
       ctx.strokeStyle = "grey";
@@ -261,16 +328,25 @@ export class World {
     map: leaflet.Map,
     playerRadius: PlayerRadius,
   ): void {
-    const { q: centerQ, r: centerR } = this.latLngToHex(
+    const centerCoord = this.latLngToHex(
       playerRadius.position.lat,
       playerRadius.position.lng,
     );
     const renderRange = 30;
-    const allVisibleQRs: { q: number; r: number }[] = [];
-    for (let q = centerQ - renderRange; q <= centerQ + renderRange; q++) {
-      for (let r = centerR - renderRange; r <= centerR + renderRange; r++) {
-        const distance = (Math.abs(q - centerQ) + Math.abs(r - centerR) +
-          Math.abs((q - centerQ) + (r - centerR))) / 2;
+    const allVisibleQRs: HexCoord[] = [];
+    for (
+      let q = centerCoord.q - renderRange;
+      q <= centerCoord.q + renderRange;
+      q++
+    ) {
+      for (
+        let r = centerCoord.r - renderRange;
+        r <= centerCoord.r + renderRange;
+        r++
+      ) {
+        const distance =
+          (Math.abs(q - centerCoord.q) + Math.abs(r - centerCoord.r) +
+            Math.abs((q - centerCoord.q) + (r - centerCoord.r))) / 2;
         if (distance <= renderRange) {
           allVisibleQRs.push({ q, r });
         }

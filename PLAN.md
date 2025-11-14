@@ -21,6 +21,8 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [x] Add simulated player movement: Include UI buttons for moving north/south/east/west by one grid step, updating player position and map centering accordingly.
 - [x] Implement cell visibility and memorylessness: Cells spawn/despawn to keep the screen full as the player moves or scrolls; cells forget their state (e.g., coin placements) when out of visibility, allowing farming by moving in/out of range. Cells should only be stored permanently if they are interacted with, otherwise they should be forgotten (and cleared from memory) when leaving visibility.
 - [x] Restrict interactions to nearby cells: Only cells near the player's current location are interactive; distant cells are visible but not manipulable.
+- [x] Optimize cells instances to use a plain packed float buffer, and only create objects when passing data outside of the World class or when needed for serializing data.
+- [ ] Add cell and coin serialization using the memento patter. Coins should be stored in a map using a coordinate pair, and their history can be used to determine if they have been interacted with. If so, then when being unloaded, they should have their memento snapshot method called to get a state object to be saved in the World class. Then, when coins are loaded, the world class should check if a state object exists for it, and if so it should use the memento restore method on a new coin object to restore it.
 
 ## 3. Geocoins (Generation, Spawning, and History)
 

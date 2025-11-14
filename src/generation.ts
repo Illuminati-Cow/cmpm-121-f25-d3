@@ -2,7 +2,7 @@
 import leaflet from "leaflet";
 
 // Import world generation
-import { CellInstance, World } from "./world.ts";
+import { CellInstance } from "./world.ts";
 
 // Import our luck function
 import luck from "./_luck.ts";
@@ -40,17 +40,8 @@ export class CoinGenerator {
   private coins: Map<string, Coin> = new Map();
 
   constructor(
-    private world: World,
     private spawnProbability: number = 0.1,
   ) {}
-
-  generateCoins(): void {
-    for (const cell of this.world.getAllCells()) {
-      if (luck(cell.id) < this.spawnProbability) {
-        this.spawnCoin(cell);
-      }
-    }
-  }
 
   generateCoinForCell(cell: CellInstance): Coin | undefined {
     if (luck(cell.id) < this.spawnProbability) {
