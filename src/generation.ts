@@ -16,6 +16,28 @@ export interface Coin {
   sprite?: string; // Placeholder for procedural sprite
 }
 
+export interface CoinMemento {
+  id: string;
+  value: number;
+  lat: number;
+  lng: number;
+  q: number;
+  r: number;
+  history: string[];
+}
+
+export function createCoinMemento(coin: Coin): CoinMemento {
+  return {
+    id: coin.id,
+    value: coin.value,
+    lat: coin.position.lat,
+    lng: coin.position.lng,
+    q: coin.cell.q,
+    r: coin.cell.r,
+    history: [...coin.history],
+  };
+}
+
 export type CoinHoveredEventDetail = {
   coin: Coin;
 };

@@ -1,6 +1,13 @@
 // @deno-types="npm:@types/leaflet"
 import leaflet from "leaflet";
-import { addCoinEventListeners, Coin, createCoinMarker } from "./generation.ts";
+import {
+  addCoinEventListeners,
+  Coin,
+  CoinGenerator,
+  CoinMemento,
+  createCoinMarker,
+  createCoinMemento,
+} from "./generation.ts";
 import { PlayerRadius } from "./player.ts";
 
 export type HexCoord = {
@@ -111,11 +118,31 @@ export class World {
     { coin: Coin; marker: leaflet.CircleMarker }
   > = new Map();
   private coinsByCell: Map<string, Coin> = new Map();
+  private persistedCoins: Map<string, CoinMemento> = new Map();
   private overlays: leaflet.ImageOverlay[] = [];
 
-  constructor(origin: leaflet.LatLng) {
+  constructor(origin: leaflet.LatLng, private coinGenerator: CoinGenerator) {
     this.sharedData = new SharedCellData(origin);
     this.cellBuffer = new Float32Array(this.bufferSize * World.CELL_SIZE);
+  }
+
+  restoreCoinFromMemento(memento: CoinMemento): Coin {
+    const cell = new CellInstance(memento.q, memento.r, this.sharedData);
+    return {
+      id: memento.id,
+      value: memento.value,
+      position: leaflet.latLng(memento.lat, memento.lng),
+      cell,
+      history: [...memento.history],
+    };
+  }
+
+  getPersistedCoinForCell(cellId: string): CoinMemento | undefined {
+    return this.persistedCoins.get(cellId);
+  }
+
+  removePersisted(cellId: string): void {
+    this.persistedCoins.delete(cellId);
   }
 
   private drawHexPath(
@@ -182,7 +209,55 @@ export class World {
     centerCoord: HexCoord,
     range: number,
     map: leaflet.Map,
-  ): CellInstance[] {
+    playerRadius: PlayerRadius,
+    eventBus: EventTarget,
+  ): void {
+    const existingCellIds = this.collectCurrentCellIds();
+    this.cellCount = 0;
+    const addedCells = this.generateCellsAround(centerCoord, range);
+
+    pruneCoins(this);
+    generateCoins(this);
+
+    function generateCoins(world: World) {
+      for (const coord of addedCells.difference(existingCellIds)) {
+        const [qStr, rStr] = coord.split(",");
+        const cell = new CellInstance(
+          Number(qStr),
+          Number(rStr),
+          world.sharedData,
+        );
+        const persisted = world.getPersistedCoinForCell(cell.id);
+        let coin: Coin | undefined = undefined;
+        if (persisted) {
+          coin = world.restoreCoinFromMemento(persisted);
+          world.removePersisted(cell.id);
+        } else {
+          coin = world.coinGenerator.generateCoinForCell(cell);
+        }
+        if (coin) {
+          const withinReach = playerRadius.position.distanceTo(coin.position) <=
+            playerRadius.reach;
+          world.addCoin(coin, withinReach, eventBus, map);
+        }
+      }
+    }
+
+    function pruneCoins(world: World) {
+      for (const cellId of existingCellIds.difference(addedCells)) {
+        const coin = world.coinsByCell.get(cellId);
+        if (coin) {
+          if (coin.history.length > 1) { // interacted
+            const memento = createCoinMemento(coin);
+            world.persistedCoins.set(cellId, memento);
+          }
+          world.removeCoin(coin.id, map);
+        }
+      }
+    }
+  }
+
+  private collectCurrentCellIds(): Set<string> {
     const existingCellIds = new Set<string>();
     for (
       let index = 0;
@@ -193,9 +268,13 @@ export class World {
       const r = this.cellBuffer[index + World.CELL_R_OFFSET];
       existingCellIds.add(`${q},${r}`);
     }
-    // Clear existing cells
-    this.cellCount = 0;
+    return existingCellIds;
+  }
 
+  private generateCellsAround(
+    centerCoord: HexCoord,
+    range: number,
+  ): Set<string> {
     const addedCells = new Set<string>();
     // Generate new cells within range
     for (let q = centerCoord.q - range; q <= centerCoord.q + range; q++) {
@@ -221,21 +300,7 @@ export class World {
         }
       }
     }
-
-    for (const cellId of existingCellIds.difference(addedCells)) {
-      const coin = this.coinsByCell.get(cellId);
-      console.log(coin);
-      if (coin) {
-        this.removeCoin(coin.id, map);
-      }
-    }
-
-    return Array.from(addedCells.difference(existingCellIds)).map(
-      (coord) => {
-        const [qStr, rStr] = coord.split(",");
-        return new CellInstance(Number(qStr), Number(rStr), this.sharedData);
-      },
-    );
+    return addedCells;
   }
 
   getCell(q: number, r: number): CellInstance | undefined {

@@ -42,7 +42,9 @@ const PLAYER_REACH_DISTANCE = 60; // meters
 
 const eventBus = new EventTarget();
 
-const world = new World(leaflet.latLng(0, 0));
+const coinGenerator = new CoinGenerator();
+
+const world = new World(leaflet.latLng(0, 0), coinGenerator);
 
 // Snap player position to the center of the nearest cell
 const initialCell = world.getCellAtLatLng(CLASSROOM_LATLNG);
@@ -95,8 +97,6 @@ eventBus.addEventListener("coin-unhovered", () => {
   map.closePopup();
 });
 
-const coinGenerator = new CoinGenerator();
-
 eventBus.addEventListener("move-player", (event) => {
   const detail = (event as CustomEvent).detail;
   const direction = detail.direction as Direction;
@@ -108,15 +108,7 @@ eventBus.addEventListener("move-player", (event) => {
     positioning.position.lat,
     positioning.position.lng,
   );
-  const addedCells = world.updateCellsAround(coord, 10, map);
-  for (const cell of addedCells) {
-    const coin = coinGenerator.generateCoinForCell(cell);
-    if (coin) {
-      const withinReach =
-        playerRadius.position.distanceTo(coin.position) <= playerRadius.reach;
-      world.addCoin(coin, withinReach, eventBus, map);
-    }
-  }
+  world.updateCellsAround(coord, 10, map, playerRadius, eventBus);
   world.updateCoinReaches(playerRadius);
   world.clearOverlays(map);
   world.renderNearbyCells(map, playerRadius);
