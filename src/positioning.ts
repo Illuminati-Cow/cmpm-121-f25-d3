@@ -1,5 +1,7 @@
 // @deno-types="npm:@types/leaflet"
 import leaflet from "leaflet";
+import { PlayerRadius } from "./player.ts";
+import { createMovementButtons } from "./ui.ts";
 import { World } from "./world.ts";
 
 export type Direction =
@@ -26,39 +28,61 @@ const directionDeltas: Record<Direction, { dq: number; dr: number }> = {
 };
 
 export class Positioning {
-  private currentPosition: leaflet.LatLng;
-  private world: World;
+  constructor(
+    private world: World,
+    private playerRadius: PlayerRadius,
+    map: leaflet.Map,
+    eventBus: EventTarget,
+  ) {
+    const playerMarker = leaflet.marker(this.playerRadius.position);
+    playerMarker.bindTooltip("That's you!");
+    playerMarker.addTo(map);
 
-  constructor(world: World, initialPosition: leaflet.LatLng) {
-    this.world = world;
-    this.currentPosition = initialPosition;
+    playerMarker.bindPopup(createMovementButtons(eventBus));
+    playerMarker.openPopup();
+    map.setView(this.playerRadius.position);
+    eventBus.addEventListener("move-player", (event) => {
+      const detail = (event as CustomEvent).detail;
+      const direction = detail.direction as Direction;
+      this.move(direction);
+      playerMarker.setLatLng(this.position);
+      // map.panTo(this.position);
+      const coord = world.latLngToHex(
+        this.position.lat,
+        this.position.lng,
+      );
+      world.updateCellsAround(coord, 10, map, playerRadius, eventBus);
+      world.renderHexes(map, playerRadius);
+    });
+    eventBus.dispatchEvent(
+      new CustomEvent("move-player", { detail: { direction: "none" } }),
+    );
   }
 
   get position(): leaflet.LatLng {
-    return this.currentPosition;
+    return this.playerRadius.position;
+  }
+
+  get reach(): number {
+    return this.playerRadius.reach;
   }
 
   // Move to adjacent cell in the specified direction
   move(direction: Direction): void {
-    const currentCell = this.world.getCellAtLatLng(this.currentPosition);
-    if (!currentCell) return;
+    const currentCell = this.world.getCellAtLatLng(this.playerRadius.position);
     const delta = directionDeltas[direction];
     const newCell = this.world.getCell(
       currentCell.q + delta.dq,
       currentCell.r + delta.dr,
     );
-    if (newCell) {
-      this.currentPosition = newCell.center;
-    }
+    this.playerRadius.position = newCell.center;
   }
 
   // Stub for GPS update
   updateFromGPS(lat: number, lng: number): void {
-    // TODO: Implement GPS positioning
+    // TODO: Implement GPS this
     // For now, snap to the cell at the given lat/lng
     const cell = this.world.getCellAtLatLng(leaflet.latLng(lat, lng));
-    if (cell) {
-      this.currentPosition = cell.center;
-    }
+    this.playerRadius.position = cell.center;
   }
 }

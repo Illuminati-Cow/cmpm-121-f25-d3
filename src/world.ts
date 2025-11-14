@@ -200,7 +200,7 @@ export class World {
     this.overlays.push(imageOverlay);
   }
 
-  clearOverlays(map: leaflet.Map): void {
+  private clearOverlays(map: leaflet.Map): void {
     this.overlays.forEach((overlay) => map.removeLayer(overlay));
     this.overlays = [];
   }
@@ -213,11 +213,11 @@ export class World {
     eventBus: EventTarget,
   ): void {
     const existingCellIds = this.collectCurrentCellIds();
-    this.cellCount = 0;
     const addedCells = this.generateCellsAround(centerCoord, range);
 
     pruneCoins(this);
     generateCoins(this);
+    this.updateCoinReaches(playerRadius);
 
     function generateCoins(world: World) {
       for (const coord of addedCells.difference(existingCellIds)) {
@@ -275,6 +275,7 @@ export class World {
     centerCoord: HexCoord,
     range: number,
   ): Set<string> {
+    this.cellCount = 0;
     const addedCells = new Set<string>();
     // Generate new cells within range
     for (let q = centerCoord.q - range; q <= centerCoord.q + range; q++) {
@@ -303,11 +304,11 @@ export class World {
     return addedCells;
   }
 
-  getCell(q: number, r: number): CellInstance | undefined {
+  getCell(q: number, r: number): CellInstance {
     return new CellInstance(q, r, this.sharedData);
   }
 
-  getCellAtLatLng(latlng: leaflet.LatLng): CellInstance | undefined {
+  getCellAtLatLng(latlng: leaflet.LatLng): CellInstance {
     const coord = this.latLngToHex(latlng.lat, latlng.lng);
     return this.getCell(coord.q, coord.r);
   }
@@ -345,7 +346,7 @@ export class World {
     return nearby;
   }
 
-  renderNearbyCells(
+  private renderNearbyCells(
     map: leaflet.Map,
     playerRadius: PlayerRadius,
   ): void {
@@ -389,7 +390,7 @@ export class World {
     });
   }
 
-  renderHexGrid(
+  private renderHexGrid(
     map: leaflet.Map,
     playerRadius: PlayerRadius,
   ): void {
@@ -435,6 +436,12 @@ export class World {
     });
   }
 
+  renderHexes(map: leaflet.Map, playerRadius: PlayerRadius) {
+    this.clearOverlays(map);
+    this.renderNearbyCells(map, playerRadius);
+    this.renderHexGrid(map, playerRadius);
+  }
+
   addCoin(
     coin: Coin,
     withinReach: boolean,
@@ -443,9 +450,7 @@ export class World {
   ): void {
     const marker = createCoinMarker(coin, withinReach);
     marker.addTo(map);
-    if (withinReach) {
-      addCoinEventListeners(marker, coin, eventBus);
-    }
+    addCoinEventListeners(marker, coin, eventBus);
     this.activeCoins.set(coin.id, { coin, marker });
     this.coinsByCell.set(coin.cell.id, coin);
   }
@@ -459,36 +464,11 @@ export class World {
     }
   }
 
-  updateCoinPosition(id: string, newPosition: leaflet.LatLng): void {
-    const entry = this.activeCoins.get(id);
-    if (entry) {
-      const oldCellId = entry.coin.cell.id;
-      entry.coin.position = newPosition;
-      entry.marker.setLatLng(newPosition);
-
-      // Update cell if position changed to a different cell
-      const newCell = this.getCellAtLatLng(newPosition);
-      if (newCell && newCell.id !== oldCellId) {
-        entry.coin.cell = newCell;
-        this.coinsByCell.delete(oldCellId);
-        this.coinsByCell.set(newCell.id, entry.coin);
-      }
-    }
-  }
-
-  getActiveCoins(): Coin[] {
-    return Array.from(this.activeCoins.values()).map((entry) => entry.coin);
-  }
-
-  getCoinMarker(id: string): leaflet.CircleMarker | undefined {
-    return this.activeCoins.get(id)?.marker;
-  }
-
   getCoinInCell(cell: CellInstance): Coin | undefined {
     return this.coinsByCell.get(cell.id);
   }
 
-  updateCoinReaches(playerRadius: PlayerRadius): void {
+  private updateCoinReaches(playerRadius: PlayerRadius): void {
     for (const [_id, entry] of this.activeCoins) {
       const withinReach =
         playerRadius.position.distanceTo(entry.coin.position) <=
