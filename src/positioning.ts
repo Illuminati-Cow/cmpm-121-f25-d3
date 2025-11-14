@@ -10,7 +10,8 @@ export type Direction =
   | "south"
   | "southwest"
   | "west"
-  | "northwest";
+  | "northwest"
+  | "none";
 
 const directionDeltas: Record<Direction, { dq: number; dr: number }> = {
   north: { dq: 0, dr: 1 },
@@ -21,6 +22,7 @@ const directionDeltas: Record<Direction, { dq: number; dr: number }> = {
   southwest: { dq: -1, dr: 0 },
   west: { dq: -1, dr: 0 },
   northwest: { dq: -1, dr: 1 },
+  none: { dq: 0, dr: 0 },
 };
 
 export class Positioning {

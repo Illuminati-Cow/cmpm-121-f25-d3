@@ -44,12 +44,6 @@ const eventBus = new EventTarget();
 
 const world = new World(leaflet.latLng(0, 0));
 
-const { q: centerQ, r: centerR } = world.latLngToHex(
-  CLASSROOM_LATLNG.lat,
-  CLASSROOM_LATLNG.lng,
-);
-world.generateCellsAround(centerQ, centerR, 25);
-
 // Snap player position to the center of the nearest cell
 const initialCell = world.getCellAtLatLng(CLASSROOM_LATLNG);
 const playerPosition = initialCell ? initialCell.center : CLASSROOM_LATLNG;
@@ -182,16 +176,6 @@ playerMarker.addTo(map);
 playerMarker.bindPopup(createMovementButtons(eventBus));
 playerMarker.openPopup();
 
-world.clearOverlays(map);
-world.renderNearbyCells(map, playerRadius);
-world.renderHexGrid(map, playerRadius);
-console.log(world);
-world.getAllCells().forEach((cell) => console.log(cell.id, cell.center));
-
-coinGenerator.generateCoins();
-
-for (const coin of coinGenerator.getCoins()) {
-  const withinReach =
-    playerRadius.position.distanceTo(coin.position) <= playerRadius.reach;
-  world.addCoin(coin, withinReach, eventBus, map);
-}
+eventBus.dispatchEvent(
+  new CustomEvent("move-player", { detail: { direction: "none" } }),
+);

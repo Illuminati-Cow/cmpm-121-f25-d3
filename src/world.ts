@@ -143,20 +143,6 @@ export class World {
     this.overlays = [];
   }
 
-  generateCellsAround(centerQ: number, centerR: number, range: number): void {
-    // Generate hex cells within the range using axial coordinates
-    for (let q = centerQ - range; q <= centerQ + range; q++) {
-      for (let r = centerR - range; r <= centerR + range; r++) {
-        const distance = (Math.abs(q - centerQ) + Math.abs(r - centerR) +
-          Math.abs((q - centerQ) + (r - centerR))) / 2;
-        if (distance <= range) {
-          const cell = new CellInstance(q, r, this.sharedData);
-          this.cells.set(cell.id, cell);
-        }
-      }
-    }
-  }
-
   updateCellsAround(
     centerQ: number,
     centerR: number,
