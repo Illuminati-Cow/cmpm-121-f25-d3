@@ -106,16 +106,29 @@ eventBus.addEventListener("coin-unhovered", () => {
   map.closePopup();
 });
 
+const coinGenerator = new CoinGenerator(world);
+
 eventBus.addEventListener("move-player", (event) => {
   const detail = (event as CustomEvent).detail;
   const direction = detail.direction as Direction;
   positioning.move(direction);
-  // Update player position
   playerRadius.position = positioning.position;
   playerMarker.setLatLng(positioning.position);
   map.panTo(positioning.position);
+  const { q, r } = world.latLngToHex(
+    positioning.position.lat,
+    positioning.position.lng,
+  );
+  const addedCells = world.updateCellsAround(q, r, 10, map);
+  for (const cell of addedCells) {
+    const coin = coinGenerator.generateCoinForCell(cell);
+    if (coin) {
+      const withinReach =
+        playerRadius.position.distanceTo(coin.position) <= playerRadius.reach;
+      world.addCoin(coin, withinReach, eventBus, map);
+    }
+  }
   world.updateCoinReaches(playerRadius);
-  // Re-render cells if needed (for now, assume within range)
   world.clearOverlays(map);
   world.renderNearbyCells(map, playerRadius);
   world.renderHexGrid(map, playerRadius);
@@ -180,7 +193,6 @@ world.renderHexGrid(map, playerRadius);
 console.log(world);
 world.getAllCells().forEach((cell) => console.log(cell.id, cell.center));
 
-const coinGenerator = new CoinGenerator(world);
 coinGenerator.generateCoins();
 
 for (const coin of coinGenerator.getCoins()) {

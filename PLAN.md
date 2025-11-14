@@ -19,8 +19,8 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [x] Implement efficient cell grid rendering: Create `renderHexGrid` function using image overlay for distant cells, and modify `renderNearbyCells` to only render nearby cells with polygons for performance optimization.
 - [x] Implement earth-spanning coordinate system: Anchor the grid at Null Island (0° latitude, 0° longitude) for consistent global positioning.
 - [x] Add simulated player movement: Include UI buttons for moving north/south/east/west by one grid step, updating player position and map centering accordingly.
-- [ ] Implement cell visibility and memorylessness: Cells spawn/despawn to keep the screen full as the player moves or scrolls; cells forget their state (e.g., coin placements) when out of visibility, allowing farming by moving in/out of range.
-- [ ] Restrict interactions to nearby cells: Only cells near the player's current location are interactive; distant cells are visible but not manipulable.
+- [x] Implement cell visibility and memorylessness: Cells spawn/despawn to keep the screen full as the player moves or scrolls; cells forget their state (e.g., coin placements) when out of visibility, allowing farming by moving in/out of range. Cells should only be stored permanently if they are interacted with, otherwise they should be forgotten (and cleared from memory) when leaving visibility.
+- [x] Restrict interactions to nearby cells: Only cells near the player's current location are interactive; distant cells are visible but not manipulable.
 
 ## 3. Geocoins (Generation, Spawning, and History)
 
@@ -28,8 +28,8 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [ ] Implement procedural texture generation: Generate coin sprites deterministically based on value or seed, using a pixelation algorithm similar to GitHub avatars—pseudo-code: for each pixel, color = hash(seed + pixelIndex) % brightColors; apply to 64x64 grid.
 - [x] Handle coin spawning: Place coins deterministically within cells, ensuring one per cell or sparse distribution, and limit to visible/nearby areas for efficiency.
 - [ ] Track coin history: Update the history array on interactions (e.g., pickup: add {action: 'picked_up', location: latLng}; placement: add {action: 'placed', location: latLng}).
-- [ ] Enforce carrying limit: Prevent picking up more than one coin at a time, using a simple state check in the player's inventory.
-- [ ] Implement memoryless coin state: When cells despawn, reset coin states (e.g., remove placed coins) so they regenerate on re-entry, enabling farming mechanics.
+- [x] Enforce carrying limit: Prevent picking up more than one coin at a time, using a simple state check in the player's inventory.
+- [x] Implement memoryless coin state: When cells despawn, reset coin states (e.g., remove placed coins) so they regenerate on re-entry, enabling farming mechanics.
 
 ## 4. Inventory and UI
 

@@ -52,7 +52,14 @@ export class CoinGenerator {
     }
   }
 
-  private spawnCoin(cell: CellInstance): void {
+  generateCoinForCell(cell: CellInstance): Coin | undefined {
+    if (luck(cell.id) < this.spawnProbability) {
+      return this.spawnCoin(cell);
+    }
+    return undefined;
+  }
+
+  private spawnCoin(cell: CellInstance): Coin {
     const value = Math.floor(luck([cell.q, cell.r, "value"].toString()) * 10) +
       1; // Values 1-10 for D3.a
     const coin: Coin = {
@@ -63,6 +70,7 @@ export class CoinGenerator {
       history: [`Spawned in cell ${cell.id}`],
     };
     this.coins.set(coin.id, coin);
+    return coin;
   }
 
   getCoins(): Coin[] {

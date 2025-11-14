@@ -85,12 +85,12 @@ export class World {
 
   private drawHexPath(
     ctx: CanvasRenderingContext2D,
-    cell: CellInstance,
+    qr: { q: number; r: number },
     map: leaflet.Map,
     nw: leaflet.Point,
   ): void {
     ctx.beginPath();
-    const corners = cell.corners;
+    const corners = this.sharedData.getCorners(qr.q, qr.r);
     const firstPoint = map.latLngToContainerPoint(corners[0]);
     ctx.moveTo(firstPoint.x - nw.x, firstPoint.y - nw.y);
     for (let i = 1; i < corners.length; i++) {
@@ -102,16 +102,18 @@ export class World {
 
   private createHexOverlay(
     map: leaflet.Map,
-    cells: CellInstance[],
+    qrs: { q: number; r: number }[],
     drawCell: (
       ctx: CanvasRenderingContext2D,
-      cell: CellInstance,
+      qr: { q: number; r: number },
       nw: leaflet.Point,
     ) => void,
   ): void {
-    if (cells.length === 0) return;
+    if (qrs.length === 0) return;
 
-    const allCorners = cells.flatMap((cell) => cell.corners);
+    const allCorners = qrs.flatMap((qr) =>
+      this.sharedData.getCorners(qr.q, qr.r)
+    );
     const bounds = leaflet.latLngBounds(allCorners);
 
     const canvas = document.createElement("canvas");
@@ -126,8 +128,8 @@ export class World {
     canvas.width = width;
     canvas.height = height;
 
-    for (const cell of cells) {
-      drawCell(ctx, cell, nw);
+    for (const qr of qrs) {
+      drawCell(ctx, qr, nw);
     }
 
     const imgUrl = canvas.toDataURL();
@@ -153,6 +155,48 @@ export class World {
         }
       }
     }
+  }
+
+  updateCellsAround(
+    centerQ: number,
+    centerR: number,
+    range: number,
+    map: leaflet.Map,
+  ): CellInstance[] {
+    const newCells = new Map<string, CellInstance>();
+    // Generate new cells within range
+    for (let q = centerQ - range; q <= centerQ + range; q++) {
+      for (let r = centerR - range; r <= centerR + range; r++) {
+        const distance = (Math.abs(q - centerQ) + Math.abs(r - centerR) +
+          Math.abs((q - centerQ) + (r - centerR))) / 2;
+        if (distance <= range) {
+          const cell = new CellInstance(q, r, this.sharedData);
+          newCells.set(cell.id, cell);
+        }
+      }
+    }
+
+    // Remove cells that are no longer in range
+    for (const [id, _cell] of this.cells) {
+      if (!newCells.has(id)) {
+        // Remove coin if exists
+        const coin = this.coinsByCell.get(id);
+        if (coin) {
+          this.removeCoin(coin.id, map);
+        }
+        this.cells.delete(id);
+      }
+    }
+
+    // Add new cells and collect them
+    const addedCells: CellInstance[] = [];
+    for (const [id, cell] of newCells) {
+      if (!this.cells.has(id)) {
+        this.cells.set(id, cell);
+        addedCells.push(cell);
+      }
+    }
+    return addedCells;
   }
 
   getCell(q: number, r: number): CellInstance | undefined {
@@ -211,14 +255,17 @@ export class World {
       return minWeight + t * (maxWeight - minWeight);
     };
 
-    this.createHexOverlay(map, nearbyCells, (ctx, cell, nw) => {
-      const distance = playerRadius.position.distanceTo(cell.center);
+    const nearbyQRs = nearbyCells.map((cell) => ({ q: cell.q, r: cell.r }));
+    this.createHexOverlay(map, nearbyQRs, (ctx, qr, nw) => {
+      const distance = playerRadius.position.distanceTo(
+        this.sharedData.getCenter(qr.q, qr.r),
+      );
       const weight = opacityFunction(distance, 10, 60, 0.1, 0.4);
       ctx.lineWidth = weight;
       ctx.fillStyle = "rgba(128, 128, 128, 0.1)";
       ctx.strokeStyle = "grey";
 
-      this.drawHexPath(ctx, cell, map, nw);
+      this.drawHexPath(ctx, qr, map, nw);
       ctx.fill();
       ctx.stroke();
     });
@@ -228,20 +275,35 @@ export class World {
     map: leaflet.Map,
     playerRadius: PlayerRadius,
   ): void {
-    const allCells = this.getAllCells();
+    const { q: centerQ, r: centerR } = this.latLngToHex(
+      playerRadius.position.lat,
+      playerRadius.position.lng,
+    );
+    const renderRange = 30;
+    const allVisibleQRs: { q: number; r: number }[] = [];
+    for (let q = centerQ - renderRange; q <= centerQ + renderRange; q++) {
+      for (let r = centerR - renderRange; r <= centerR + renderRange; r++) {
+        const distance = (Math.abs(q - centerQ) + Math.abs(r - centerR) +
+          Math.abs((q - centerQ) + (r - centerR))) / 2;
+        if (distance <= renderRange) {
+          allVisibleQRs.push({ q, r });
+        }
+      }
+    }
     const nearbyCells = this.getNearbyCells(
       playerRadius.position,
       playerRadius.reach,
     );
-    const distantCells = allCells.filter((cell) =>
-      !nearbyCells.some((nc) => nc.id === cell.id)
+    const nearbyQRs = nearbyCells.map((cell) => ({ q: cell.q, r: cell.r }));
+    const distantQRs = allVisibleQRs.filter((qr) =>
+      !nearbyQRs.some((nqr) => nqr.q === qr.q && nqr.r === qr.r)
     );
 
-    this.createHexOverlay(map, distantCells, (ctx, cell, nw) => {
+    this.createHexOverlay(map, distantQRs, (ctx, qr, nw) => {
       ctx.strokeStyle = "lightgrey";
       ctx.lineWidth = 1;
 
-      this.drawHexPath(ctx, cell, map, nw);
+      this.drawHexPath(ctx, qr, map, nw);
       ctx.stroke();
     });
   }
