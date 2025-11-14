@@ -8,18 +8,36 @@ export function createInventoryUI(): HTMLElement {
   if (inventoryDiv) return inventoryDiv;
   const container = document.createElement("div");
   container.id = "inventory";
-  container.innerHTML = `<h3>Inventory</h3>
-    <div id="inventory-item">Empty</div>
-  `;
+  const item = document.createElement("div");
+  item.id = "inventory-item";
+  item.textContent = "Empty";
+  container.appendChild(item);
   inventoryDiv = container as HTMLElement;
   return container;
 }
 
 export function updateInventoryUI(inventory: Inventory): void {
+  const animation = () => {
+    item.animate(
+      [
+        { transform: "scale(0.5)" },
+        { transform: "scale(1.2)" },
+        { transform: "scale(1)" },
+      ],
+      {
+        duration: 600,
+        easing: "ease-out",
+      },
+    );
+  };
+
+  const item = inventoryDiv.querySelector("#inventory-item")!;
   if (inventory.hasItem()) {
-    inventoryDiv.innerHTML = `<div>${inventory.coin!.value}</div>`;
+    item.textContent = `${inventory.coin!.value}`;
+    animation();
   } else {
-    inventoryDiv.innerHTML = `<div>Empty</div>`;
+    item.textContent = "Empty";
+    animation();
   }
 }
 
