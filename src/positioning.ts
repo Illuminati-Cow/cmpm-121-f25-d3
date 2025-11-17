@@ -57,6 +57,16 @@ export class Positioning {
     eventBus.dispatchEvent(
       new CustomEvent("move-player", { detail: { direction: "none" } }),
     );
+    navigator.geolocation.watchPosition((pos) => {
+      this.updateFromGPS(pos.coords.latitude, pos.coords.longitude);
+      playerMarker.setLatLng(this.position);
+      const coord = world.latLngToHex(
+        this.position.lat,
+        this.position.lng,
+      );
+      world.updateCellsAround(coord, 10, map, playerRadius, eventBus);
+      world.renderHexes(map, playerRadius);
+    });
   }
 
   get position(): leaflet.LatLng {
