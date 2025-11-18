@@ -1,4 +1,5 @@
 import { Map } from "leaflet";
+import { config } from "./config.ts";
 import { Coin } from "./generation.ts";
 import { Inventory } from "./player.ts";
 
@@ -112,4 +113,56 @@ export function createMovementButtons(eventBus: EventTarget): HTMLElement {
     };
     return button;
   }
+}
+
+export let settingsWindow: HTMLElement | null = null;
+
+export function createSettingsButton(eventBus: EventTarget): HTMLElement {
+  const button = document.createElement("button");
+  button.innerHTML = "⚙️";
+  button.className = "settings-button";
+  button.onclick = () => {
+    eventBus.dispatchEvent(new CustomEvent("toggle-settings"));
+  };
+  return button;
+}
+
+export function createSettingsWindow(eventBus: EventTarget): HTMLElement {
+  const container = document.createElement("div");
+  container.className = "settings-window";
+  container.innerHTML = `
+    <button class="close-btn">×</button>
+    <h3>Settings</h3>
+    <button id="new-game">New Game</button>
+    <label>
+      <input type="checkbox" id="debug-mode"> Debug Mode (UI Movement)
+    </label>
+  `;
+
+  const closeBtn = container.querySelector(".close-btn")! as HTMLButtonElement;
+  closeBtn.onclick = () => {
+    container.style.display = "none";
+  };
+
+  const newGameBtn = container.querySelector("#new-game")! as HTMLButtonElement;
+  newGameBtn.onclick = () => {
+    eventBus.dispatchEvent(new CustomEvent("new-game"));
+    container.style.display = "none";
+  };
+
+  const debugCheckbox = container.querySelector(
+    "#debug-mode",
+  )! as HTMLInputElement;
+  debugCheckbox.checked = config.debugMovement;
+  debugCheckbox.onchange = () => {
+    eventBus.dispatchEvent(
+      new CustomEvent("toggle-movement-mode", {
+        detail: { mode: debugCheckbox.checked ? "ui" : "gps" },
+      }),
+    );
+  };
+
+  settingsWindow = container;
+  settingsWindow.style.display = "none";
+  return container;
 }

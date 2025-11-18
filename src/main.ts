@@ -4,10 +4,18 @@ import "leaflet/dist/leaflet.css";
 import "./_leafletWorkaround.ts";
 import "./style.css";
 
+import { config } from "./config.ts";
 import { CoinGenerator, craftCoin } from "./generation.ts";
 import { Inventory } from "./player.ts";
 import { Positioning } from "./positioning.ts";
-import { createCoinPopup, createInventoryUI, updateInventoryUI } from "./ui.ts";
+import {
+  createCoinPopup,
+  createInventoryUI,
+  createSettingsButton,
+  createSettingsWindow,
+  settingsWindow,
+  updateInventoryUI,
+} from "./ui.ts";
 import { World } from "./world.ts";
 
 const CLASSROOM_LATLNG = leaflet.latLng(
@@ -52,6 +60,14 @@ leaflet
       '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   })
   .addTo(map);
+
+const settingsButton = createSettingsButton(eventBus);
+settingsButton.style.position = "absolute";
+settingsButton.style.top = "10px";
+settingsButton.style.left = "10px";
+settingsButton.style.zIndex = "1000";
+mapDiv.append(settingsButton);
+document.body.append(createSettingsWindow(eventBus));
 
 const positioning = new Positioning(
   world,
@@ -134,5 +150,33 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
     );
     updateInventoryUI(inventory);
   }
+});
+//#endregion
+
+//#region Settings
+eventBus.addEventListener("toggle-settings", () => {
+  settingsWindow!.style.display = settingsWindow!.style.display === "none"
+    ? "block"
+    : "none";
+});
+
+eventBus.addEventListener("new-game", () => {
+  inventory.clear();
+  updateInventoryUI(inventory);
+  world.clear(map);
+  positioning.resetTo(initialCell.center);
+  map.setView(initialCell.center);
+  const coord = world.latLngToHex(
+    initialCell.center.lat,
+    initialCell.center.lng,
+  );
+  world.updateCellsAround(coord, 10, map, positioning.playerRadius, eventBus);
+  world.renderHexes(map, positioning.playerRadius);
+});
+
+eventBus.addEventListener("toggle-movement-mode", (event) => {
+  const detail = (event as CustomEvent).detail;
+  positioning.setMode(detail.mode, map, eventBus);
+  config.debugMovement = detail.mode === "ui";
 });
 //#endregion

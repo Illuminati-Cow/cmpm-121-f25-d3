@@ -28,4 +28,8 @@ export class Inventory {
     this.item = null;
     return item;
   }
+
+  public clear(): void {
+    this.item = null;
+  }
 }

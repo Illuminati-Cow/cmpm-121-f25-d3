@@ -39,8 +39,9 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [ ] Implement coin pickup interaction: Detect proximity (set distance threshold), show a pop-up on click with coin details (value, history preview), and add a "Pick Up" button that moves the coin to inventory.
 - [x] Visualize detection proximity radius by only rendering the cell overlay for cells within the player's reach, and render coins that are not within reach in grayscale.
 - [ ] Handle inventory conflicts: If holding a coin, show swap/craft options in the pop-up for new coins, using conditional UI logic to display buttons based on current inventory state.
-- [ ] Integrate with map: Ensure UI elements overlay the Leaflet map without interfering with scrolling or zooming.
-- [ ] Add movement simulation buttons: Create UI buttons (e.g., north, south, east, west) to simulate player movement by one grid step, updating position and triggering cell updates.
+- [x] Integrate with map: Ensure UI elements overlay the Leaflet map without interfering with scrolling or zooming.
+- [x] Add movement simulation buttons: Create UI buttons (e.g., north, south, east, west) to simulate player movement by one grid step, updating position and triggering cell updates.
+- [x] Add settings cog button in the top-left of the map that opens a floating window. The window should be closed if the settings button is clicked again, or if the close button is pressed. There should be a new game button that clears the game state, and a debug switch that toggles the movement mode between GPS and UI buttons.
 
 ## 5. Crafting
 
@@ -55,3 +56,4 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [ ] Add game state management: Use the memento pattern to track inventory, coins, and progress, ensuring persistence across sessions if needed.
 - [ ] Test determinism and performance: Verify world generation consistency and optimize for large maps (e.g., lazy-load cells).
 - [ ] Polish UI/UX: Ensure responsive design for mobile/touch, add loading states, and refine pop-ups for clarity.
+- [ ] Serialize game state data and store it in localStorage at a regular interval (5 seconds). Restore game state from localStorage on page reopen, if available. 

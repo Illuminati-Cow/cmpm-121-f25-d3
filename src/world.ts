@@ -481,4 +481,16 @@ export class World {
       });
     }
   }
+
+  clear(map: leaflet.Map): void {
+    // Remove all active coins from map
+    for (const [id, _entry] of this.activeCoins) {
+      this.removeCoin(id, map);
+    }
+    this.activeCoins.clear();
+    this.coinsByCell.clear();
+    this.persistedCoins.clear();
+    this.clearOverlays(map);
+    this.cellCount = 0;
+  }
 }

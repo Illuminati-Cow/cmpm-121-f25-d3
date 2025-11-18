@@ -1,6 +1,7 @@
 body {
   height: 100vh;
   margin: 0;
+  font-family: Inter, sans-serif;
 }
 
 #title-bar {
@@ -53,6 +54,7 @@ body {
   min-height: 400px;
   position: relative;
   margin: 0;
+  user-select: none;
 }
 
 @media (min-width: 768px) {
@@ -177,4 +179,87 @@ body {
 
 .movement-buttons button:hover {
   background-color: #0056b3;
+}
+
+.settings-button {
+  width: 40px;
+  height: 40px;
+  font-size: 32px;
+  border: none;
+  background-color: transparent;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: transform 0.3s ease-out;
+  -webkit-transition: transform 0.3s ease-out;
+  -moz-transition: transform 0.3s ease-out;
+  -ms-transition: transform 0.3s ease-out;
+  -o-transition: transform 0.3s ease-out;
+}
+
+.settings-button:hover {
+  transform: scale(1.25);
+  -webkit-transform: scale(1.25);
+  -moz-transform: scale(1.25);
+  -ms-transform: scale(1.25);
+  -o-transform: scale(1.25);
+}
+
+.settings-window {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  min-width: 200px;
+}
+
+.settings-window .close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 2rem;
+  aspect-ratio: 1 / 1;
+  object-fit: fill;
+  margin: 0;
+  padding: 0;
+  background: rgb(199, 199, 199);
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.settings-window h3 {
+  margin-top: 0;
+}
+
+.settings-window button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  border: none;
+  background-color: #cb001b;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.settings-window button:hover {
+  background-color: #5b0000;
+}
+
+.settings-window label {
+  display: block;
+  margin: 10px 0;
 }
