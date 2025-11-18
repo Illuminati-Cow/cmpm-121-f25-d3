@@ -56,4 +56,4 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [ ] Add game state management: Use the memento pattern to track inventory, coins, and progress, ensuring persistence across sessions if needed.
 - [ ] Test determinism and performance: Verify world generation consistency and optimize for large maps (e.g., lazy-load cells).
 - [ ] Polish UI/UX: Ensure responsive design for mobile/touch, add loading states, and refine pop-ups for clarity.
-- [ ] Serialize game state data and store it in localStorage at a regular interval (5 seconds). Restore game state from localStorage on page reopen, if available. 
+- [ ] Serialize game state data and store it in localStorage at a regular interval (5 seconds). Restore game state from localStorage on page reopen, if available.

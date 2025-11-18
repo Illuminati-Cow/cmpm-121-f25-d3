@@ -164,7 +164,7 @@ eventBus.addEventListener("new-game", () => {
   inventory.clear();
   updateInventoryUI(inventory);
   world.clear(map);
-  positioning.resetTo(initialCell.center);
+  positioning.resetTo(initialCell.center, eventBus);
   map.setView(initialCell.center);
   const coord = world.latLngToHex(
     initialCell.center.lat,
@@ -176,7 +176,7 @@ eventBus.addEventListener("new-game", () => {
 
 eventBus.addEventListener("toggle-movement-mode", (event) => {
   const detail = (event as CustomEvent).detail;
-  positioning.setMode(detail.mode, map, eventBus);
+  positioning.setMode(detail.mode, eventBus);
   config.debugMovement = detail.mode === "ui";
 });
 //#endregion

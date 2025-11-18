@@ -35,33 +35,24 @@ export class Positioning {
   constructor(
     private world: World,
     public playerRadius: PlayerRadius,
-    map: leaflet.Map,
+    private map: leaflet.Map,
     eventBus: EventTarget,
     initialMode: "gps" | "ui" = "gps",
   ) {
-    this.setMode(initialMode, map, eventBus);
     this.playerMarker = leaflet.marker(this.playerRadius.position);
     this.playerMarker.bindTooltip("That's you!");
-    this.playerMarker.addTo(map);
-    map.setView(this.playerRadius.position);
+    this.playerMarker.addTo(this.map);
+    this.setMode(initialMode, eventBus);
 
     eventBus.addEventListener("move-player", (event) => {
       if (this.mode !== "ui") return;
       const detail = (event as CustomEvent).detail;
       const direction = detail.direction as Direction;
       this.move(direction);
-      this.playerMarker.setLatLng(this.position);
-      const coord = world.latLngToHex(
-        this.position.lat,
-        this.position.lng,
-      );
-      world.updateCellsAround(coord, 10, map, playerRadius, eventBus);
-      world.renderHexes(map, playerRadius);
+      this.onMove(this.playerRadius.position, eventBus);
     });
 
-    eventBus.dispatchEvent(
-      new CustomEvent("move-player", { detail: { direction: "none" } }),
-    );
+    this.onMove(this.playerRadius.position, eventBus);
   }
 
   get position(): leaflet.LatLng {
@@ -73,7 +64,7 @@ export class Positioning {
   }
 
   // Move to adjacent cell in the specified direction
-  move(direction: Direction): void {
+  private move(direction: Direction): void {
     const currentCell = this.world.getCellAtLatLng(this.playerRadius.position);
     const delta = directionDeltas[direction];
     const newCell = this.world.getCell(
@@ -83,16 +74,28 @@ export class Positioning {
     this.playerRadius.position = newCell.center;
   }
 
-  // Stub for GPS update
-  updateFromGPS(lat: number, lng: number): void {
-    // TODO: Implement GPS this
-    // For now, snap to the cell at the given lat/lng
-    const cell = this.world.getCellAtLatLng(leaflet.latLng(lat, lng));
-    this.playerRadius.position = cell.center;
+  private onMove(position: leaflet.LatLng, eventBus: EventTarget): void {
+    const cell = this.world.getCellAtLatLng(position);
+    if (this.playerRadius.position.distanceTo(cell.center) > 1) {
+      this.map.panTo(cell.center);
+      this.playerRadius.position = cell.center;
+    }
+    this.playerMarker.setLatLng(this.position);
+    const coord = this.world.latLngToHex(
+      this.position.lat,
+      this.position.lng,
+    );
+    this.world.updateCellsAround(
+      coord,
+      10,
+      this.map,
+      this.playerRadius,
+      eventBus,
+    );
+    this.world.renderHexes(this.map, this.playerRadius);
   }
 
-  setMode(mode: "gps" | "ui", map: leaflet.Map, eventBus: EventTarget): void {
-    if (this.mode === mode) return;
+  setMode(mode: "gps" | "ui", eventBus: EventTarget): void {
     this.mode = mode;
     if (mode === "ui") {
       this.stopGPS();
@@ -101,22 +104,22 @@ export class Positioning {
     } else {
       this.playerMarker.closePopup();
       this.playerMarker.unbindPopup();
-      this.startGPS(map, eventBus);
+      this.startGPS(eventBus);
     }
   }
 
-  private startGPS(map: leaflet.Map, eventBus: EventTarget): void {
+  private startGPS(eventBus: EventTarget): void {
     if (this.watchId) return;
-    this.watchId = navigator.geolocation.watchPosition((pos) => {
-      this.updateFromGPS(pos.coords.latitude, pos.coords.longitude);
-      this.playerMarker.setLatLng(this.position);
-      const coord = this.world.latLngToHex(
-        this.position.lat,
-        this.position.lng,
-      );
-      this.world.updateCellsAround(coord, 10, map, this.playerRadius, eventBus);
-      this.world.renderHexes(map, this.playerRadius);
-    });
+    this.watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        this.onMove(
+          leaflet.latLng(pos.coords.latitude, pos.coords.longitude),
+          eventBus,
+        );
+      },
+      null,
+      { enableHighAccuracy: true },
+    );
   }
 
   private stopGPS(): void {
@@ -126,8 +129,7 @@ export class Positioning {
     }
   }
 
-  resetTo(position: leaflet.LatLng): void {
-    this.playerRadius.position = position;
-    this.playerMarker.setLatLng(position);
+  resetTo(position: leaflet.LatLng, eventBus: EventTarget): void {
+    this.onMove(position, eventBus);
   }
 }
