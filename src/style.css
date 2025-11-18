@@ -122,6 +122,11 @@ body {
   -o-transform: translate(-50%, -20%);
 }
 
+.leaflet-popup-content p {
+  margin: 0;
+  padding: 0;
+}
+
 .leaflet-popup-content-wrapper {
   background: whitesmoke;
   border-radius: 8px;
@@ -130,6 +135,10 @@ body {
 
 .leaflet-popup-tip-container {
   display: none;
+}
+
+.leaflet-popup-content-wrapper + .leaflet-popup-tip-container {
+  display: block;
 }
 
 .coin-spawn {
@@ -262,4 +271,34 @@ body {
 .settings-window label {
   display: block;
   margin: 10px 0;
+}
+
+.coin-popup * {
+  margin: 0;
+  padding: 0;
+}
+
+.coin-popup ul {
+  background-color: #e1e1e1;
+  border-radius: 3px;
+  max-height: 5rem;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  -ms-border-radius: 3px;
+  -o-border-radius: 3px;
+  scroll-behavior: auto;
+  overflow-y: hidden;
+  margin-bottom: 1rem;
+}
+
+.coin-popup ul li {
+  list-style-type: none;
+}
+
+/* .coin-popup ul li + li {
+  margin-top: 4px;
+} */
+
+.coin-popup li:nth-child(odd) {
+  background-color: #d0d0d0;
 }

@@ -51,6 +51,12 @@ export function createCoinPopup(map: Map, coin: Coin): HTMLElement {
     <p>Position: (${coin.position.lat.toFixed(5)}, ${
     coin.position.lng.toFixed(5)
   })</p>
+  <div class="coin-history">
+    <h4>History</h4>
+    <ul>
+      ${coin.history.map((entry) => `<li>${entry}</li>`).reverse().join("")}
+    </ul>
+  </div>
   `;
   map.openPopup(container, coin.position, {
     closeButton: false,

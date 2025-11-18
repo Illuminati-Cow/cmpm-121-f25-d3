@@ -103,6 +103,7 @@ eventBus.addEventListener("coin-clicked", (event) => {
     }
   } else {
     world.removeCoin(coin.id, map);
+    coin.history.push(`Picked up from cell ${coin.cell.id}`);
     const oldCoin = inventory.swapItem(coin);
     if (oldCoin) {
       oldCoin.position = coin.position;
