@@ -33,10 +33,14 @@ const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 document.body.append(mapDiv);
 
-// Restore persisted config on initial page load only
+// Restore persisted config (and player position if in UI mode) on initial page load only
 const restored = loadGameState();
+let startLatLng = CLASSROOM_LATLNG;
 if (restored) {
-  config.debugMovement = !!restored.config.debugMovement;
+  config.debugMovement = restored.config.debugMovement;
+  if (restored.player) {
+    startLatLng = leaflet.latLng(restored.player.lat, restored.player.lng);
+  }
 }
 
 const inventory = new Inventory(null, eventBus);
@@ -48,7 +52,7 @@ const coinGenerator = new CoinGenerator();
 
 const world = new World(leaflet.latLng(0, 0), coinGenerator);
 const map = leaflet.map(mapDiv, {
-  center: CLASSROOM_LATLNG,
+  center: startLatLng,
   zoom: GAMEPLAY_ZOOM_LEVEL,
   minZoom: GAMEPLAY_ZOOM_LEVEL,
   maxZoom: GAMEPLAY_ZOOM_LEVEL,
@@ -56,7 +60,7 @@ const map = leaflet.map(mapDiv, {
   scrollWheelZoom: false,
 });
 
-const initialCell = world.getCellAtLatLng(CLASSROOM_LATLNG);
+const initialCell = world.getCellAtLatLng(startLatLng);
 
 const playerPosition = initialCell.center;
 const mode: "gps" | "ui" = config.debugMovement ? "ui" : "gps";
@@ -201,6 +205,20 @@ eventBus.addEventListener("toggle-movement-mode", (event) => {
   const detail = (event as CustomEvent).detail;
   positioning.setMode(detail.mode, eventBus);
   config.debugMovement = detail.mode === "ui";
-  saveGameState({ config: { debugMovement: config.debugMovement } });
+  const saveState = {
+    config: { debugMovement: true },
+    player: {
+      lat: positioning.position.lat,
+      lng: positioning.position.lng,
+    },
+  };
+  saveGameState(saveState);
 });
 //#endregion
+
+eventBus.addEventListener("player-moved", () => {
+  saveGameState({
+    config: { debugMovement: true },
+    player: { lat: positioning.position.lat, lng: positioning.position.lng },
+  });
+});

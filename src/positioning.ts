@@ -82,6 +82,7 @@ export class Positioning {
   }
 
   private onMove(position: leaflet.LatLng, eventBus: EventTarget): void {
+    const oldPosition = this.position;
     const cell = this.world.getCellAtLatLng(position);
     if (this.playerRadius.position.distanceTo(cell.center) > 1) {
       this.map.panTo(cell.center);
@@ -100,6 +101,11 @@ export class Positioning {
       eventBus,
     );
     this.world.renderHexes(this.map, this.playerRadius, this.cameraRadius);
+    eventBus.dispatchEvent(
+      new CustomEvent("player-moved", {
+        detail: { position: this.position, oldPosition: oldPosition },
+      }),
+    );
   }
 
   setMode(mode: "gps" | "ui", eventBus: EventTarget): void {
