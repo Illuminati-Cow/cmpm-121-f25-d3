@@ -58,7 +58,7 @@ Serialize game state data and store it in localStorage at a regular interval (5 
 - [x] Store config data in a game state object (defined by an interface in serialization.ts) that is serialized into JSON and stored in localStorage, and restore it upon starting a new game, if it is avaiable
 - [x] Store player position and restore it on load, ensure this updates the positioning system
       Rewrite the persistence and coin tracking system
-- [ ] Refactor out the coinsbycell map, as every coin either has a marker and is active or is inactive and is stored as a memento.
+- [x] Refactor out the coinsbycell map, as every coin either has a marker and is active or is inactive and is stored as a memento.
 - [ ] Coins should be persisted when interacted with rather than when unloaded. Removed coins should be persisted with a null object, so that generation knows to not generate a coin for that cell.
 
 ## 7. End Condition and Polish

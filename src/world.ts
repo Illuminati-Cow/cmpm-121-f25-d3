@@ -117,7 +117,6 @@ export class World {
     string,
     { coin: Coin; marker: leaflet.CircleMarker }
   > = new Map();
-  private coinsByCell: Map<string, Coin> = new Map();
   private persistedCoins: Map<string, CoinMemento> = new Map();
   private overlays: Map<string, leaflet.ImageOverlay> = new Map();
 
@@ -244,7 +243,14 @@ export class World {
 
     function pruneCoins(world: World) {
       for (const cellId of existingCellIds.difference(addedCells)) {
-        const coin = world.coinsByCell.get(cellId);
+        // Find any active coin whose cell matches this id
+        let coin: Coin | undefined = undefined;
+        for (const { coin: c } of world.activeCoins.values()) {
+          if (c.cell.id === cellId) {
+            coin = c;
+            break;
+          }
+        }
         if (coin) {
           if (coin.history.length > 1) { // interacted
             const memento = createCoinMemento(coin);
@@ -503,21 +509,23 @@ export class World {
     const marker = createCoinMarker(coin, withinReach);
     marker.addTo(map);
     addCoinEventListeners(marker, coin, eventBus);
-    this.activeCoins.set(coin.id, { coin, marker });
-    this.coinsByCell.set(coin.cell.id, coin);
+    this.activeCoins.set(coin.cell.id, { coin, marker });
   }
 
   removeCoin(id: string, map: leaflet.Map): void {
-    const entry = this.activeCoins.get(id);
-    if (entry) {
-      map.removeLayer(entry.marker);
-      this.coinsByCell.delete(entry.coin.cell.id);
-      this.activeCoins.delete(id);
+    // Remove by coin id: find the entry with matching coin id
+    for (const [cellId, entry] of this.activeCoins.entries()) {
+      if (entry.coin.id === id) {
+        map.removeLayer(entry.marker);
+        this.activeCoins.delete(cellId);
+        break;
+      }
     }
   }
 
   getCoinInCell(cell: CellInstance): Coin | undefined {
-    return this.coinsByCell.get(cell.id);
+    const entry = this.activeCoins.get(cell.id);
+    return entry ? entry.coin : undefined;
   }
 
   private updateCoinReaches(playerRadius: PlayerRadius): void {
@@ -536,11 +544,10 @@ export class World {
 
   clear(map: leaflet.Map): void {
     // Remove all active coins from map
-    for (const [id, _entry] of this.activeCoins) {
-      this.removeCoin(id, map);
+    for (const [_cellId, entry] of this.activeCoins) {
+      map.removeLayer(entry.marker);
     }
     this.activeCoins.clear();
-    this.coinsByCell.clear();
     this.persistedCoins.clear();
     this.cellCount = 0;
     this.overlays.forEach((overlay) => map.removeLayer(overlay));
