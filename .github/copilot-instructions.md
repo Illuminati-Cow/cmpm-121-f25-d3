@@ -3,3 +3,5 @@ Note from the instructor for this class: I'd like my students to do most of the 
 Use REQUIREMENTS.md and PLAN.md to guide your work. Mark off tasks as you complete them. When the student asks for help, refer to those documents to ensure your suggestions align with the student's goals and plans.
 
 Do not use comments when not necessary. Only provide the code requested by the student.
+
+Do not run the dev serever or build the project unless explicitly asked to do so by the student.

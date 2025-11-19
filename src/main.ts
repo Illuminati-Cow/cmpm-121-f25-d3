@@ -8,6 +8,7 @@ import { config } from "./config.ts";
 import { CoinGenerator, craftCoin } from "./generation.ts";
 import { Inventory } from "./player.ts";
 import { Positioning } from "./positioning.ts";
+import { loadGameState, saveGameState } from "./serialization.ts";
 import {
   createCoinPopup,
   createInventoryUI,
@@ -32,6 +33,12 @@ const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 document.body.append(mapDiv);
 
+// Restore persisted config on initial page load only
+const restored = loadGameState();
+if (restored) {
+  config.debugMovement = !!restored.config.debugMovement;
+}
+
 const inventory = new Inventory(null, eventBus);
 const inventoryUI = createInventoryUI();
 mapDiv.append(inventoryUI);
@@ -52,7 +59,7 @@ const map = leaflet.map(mapDiv, {
 const initialCell = world.getCellAtLatLng(CLASSROOM_LATLNG);
 
 const playerPosition = initialCell.center;
-const mode: "gps" | "ui" = "gps";
+const mode: "gps" | "ui" = config.debugMovement ? "ui" : "gps";
 // Populate the map with a background tile layer
 leaflet
   .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -194,5 +201,6 @@ eventBus.addEventListener("toggle-movement-mode", (event) => {
   const detail = (event as CustomEvent).detail;
   positioning.setMode(detail.mode, eventBus);
   config.debugMovement = detail.mode === "ui";
+  saveGameState({ config: { debugMovement: config.debugMovement } });
 });
 //#endregion

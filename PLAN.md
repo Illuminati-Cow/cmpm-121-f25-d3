@@ -50,10 +50,20 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [ ] Merge histories: Combine history arrays from both coins into the new coin's history, preserving chronological order.
 - [x] Update inventory post-craft: Replace held coin with the crafted result, removing the placed coin from the map.
 
-## 6. End Condition and Polish
+# 6. Serialization and Persistence
+
+Serialize game state data and store it in localStorage at a regular interval (5 seconds). Restore game state from localStorage on page reopen, if available.
+
+- [ ] Store config data in a game state object (defined by an interface in serialization.ts) that is serialized into JSON and stored in localStorage, and restore it upon starting a new game, if it is avaiable
+- [x] Store config data in a game state object (defined by an interface in serialization.ts) that is serialized into JSON and stored in localStorage, and restore it upon starting a new game, if it is avaiable
+- [ ] Store player position and restore it on load if the mode is not "gps", ensure this updates the positioning system
+      Rewrite the persistence and coin tracking system
+- [ ] Refactor out the coinsbycell map, as every coin either has a marker and is active or is inactive and is stored as a memento.
+- [ ] Coins should be persisted when interacted with rather than when unloaded. Removed coins should be persisted with a null object, so that generation knows to not generate a coin for that cell.
+
+## 7. End Condition and Polish
 
 - [x] Implement win condition: Check after crafting if the new coin's value equals 256, triggering a game-over screen or message.
 - [ ] Add game state management: Use the memento pattern to track inventory, coins, and progress, ensuring persistence across sessions if needed.
 - [ ] Polish UI/UX: Ensure responsive design for mobile/touch, add loading states, and refine pop-ups for clarity.
-- [ ] Serialize game state data and store it in localStorage at a regular interval (5 seconds). Restore game state from localStorage on page reopen, if available.
 - [x] Optimize grid rendering in World.ts to move pre-rendered hex-grids instead of redrawing them in a new location
