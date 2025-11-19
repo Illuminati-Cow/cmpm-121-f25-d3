@@ -119,7 +119,7 @@ export class World {
   > = new Map();
   private coinsByCell: Map<string, Coin> = new Map();
   private persistedCoins: Map<string, CoinMemento> = new Map();
-  private overlays: leaflet.ImageOverlay[] = [];
+  private overlays: Map<string, leaflet.ImageOverlay> = new Map();
 
   constructor(origin: leaflet.LatLng, private coinGenerator: CoinGenerator) {
     this.sharedData = new SharedCellData(origin);
@@ -201,32 +201,7 @@ export class World {
     const imageOverlay = leaflet.imageOverlay(imgUrl, bounds);
     imageOverlay.addTo(map);
     performance.mark("create-hex-overlay-end");
-    console.log(performance.measure(
-      "Create Hex Overlay",
-      "create-hex-overlay-start",
-      "create-hex-overlay-end",
-    ));
-    console.log(performance.measure(
-      "Calculate Bounds",
-      "create-hex-overlay-start",
-      "calculate-bounds-end",
-    ));
-    console.log(performance.measure(
-      "Setup Canvas",
-      "calculate-bounds-end",
-      "setup-canvas-end",
-    ));
-    console.log(performance.measure(
-      "Draw Cells",
-      "setup-canvas-end",
-      "draw-cells-end",
-    ));
     return imageOverlay;
-  }
-
-  private clearOverlays(map: leaflet.Map): void {
-    this.overlays.forEach((overlay) => map.removeLayer(overlay));
-    this.overlays = [];
   }
 
   updateCellsAround(
@@ -413,7 +388,7 @@ export class World {
       ctx.stroke();
     });
     if (overlay) {
-      this.overlays.push(overlay);
+      this.overlays.set("nearby", overlay);
     }
   }
 
@@ -445,15 +420,7 @@ export class World {
         }
       }
     }
-    const nearbyCells = this.getNearbyCells(
-      playerRadius.position,
-      playerRadius.reach,
-    );
-    const nearbyQRs = nearbyCells.map((cell) => ({ q: cell.q, r: cell.r }));
-    const distantQRs = allVisibleQRs.filter((qr) =>
-      !nearbyQRs.some((nqr) => nqr.q === qr.q && nqr.r === qr.r)
-    );
-    const overlay = this.createHexOverlay(map, distantQRs, (ctx, qr, nw) => {
+    const overlay = this.createHexOverlay(map, allVisibleQRs, (ctx, qr, nw) => {
       ctx.strokeStyle = "lightgrey";
       ctx.lineWidth = 1;
 
@@ -461,7 +428,7 @@ export class World {
       ctx.stroke();
     });
     if (overlay) {
-      this.overlays.push(overlay);
+      this.overlays.set("grid", overlay);
     }
   }
 
@@ -470,37 +437,40 @@ export class World {
     playerRadius: PlayerRadius,
     cameraRadius: PlayerRadius,
   ) {
-    performance.mark("render-hexes-start");
-    this.overlays.forEach((overlay) => {
-      if (overlay.getBounds().getCenter().distanceTo(cameraRadius.position)) {
-        map.removeLayer(overlay);
-      }
-    });
-    performance.mark("clear-overlays-end");
+    const nearbyOverlay = this.overlays.get("nearby");
+    const gridOverlay = this.overlays.get("grid");
+    const hexRadiusM = this.sharedData.size * 10 ** 5; // rough conversion to meters
+    const margin = 0.9;
+    const apothem = cameraRadius.reach * Math.cos(Math.PI / 6) * margin;
+    const distanceToCameraCenter = cameraRadius.position.distanceTo(
+      playerRadius.position,
+    );
+    const playerDistanceToNearbyCenter = nearbyOverlay
+      ? nearbyOverlay.getCenter().distanceTo(playerRadius.position)
+      : Infinity;
+    const cameraDistanceToGridCenter = gridOverlay
+      ? gridOverlay.getCenter().distanceTo(cameraRadius.position)
+      : Infinity;
+    const cameraDistanceToNearbyCenter = nearbyOverlay
+      ? nearbyOverlay.getCenter().distanceTo(cameraRadius.position)
+      : Infinity;
     if (
-      cameraRadius.position.distanceTo(playerRadius.position) <=
-        cameraRadius.reach
+      !nearbyOverlay ||
+      playerDistanceToNearbyCenter > hexRadiusM ||
+      distanceToCameraCenter < cameraRadius.reach &&
+        cameraDistanceToNearbyCenter > cameraRadius.reach
     ) {
+      this.overlays.forEach((overlay) => map.removeLayer(overlay));
+      this.overlays.clear();
+      this.renderHexGrid(map, cameraRadius);
       this.renderNearbyCells(map, playerRadius);
+    } else if (!gridOverlay || cameraDistanceToGridCenter >= apothem) {
+      if (gridOverlay) {
+        map.removeLayer(gridOverlay);
+        this.overlays.delete("grid");
+      }
+      this.renderHexGrid(map, cameraRadius);
     }
-    performance.mark("render-nearby-end");
-    this.renderHexGrid(map, cameraRadius);
-    performance.mark("render-hexes-end");
-    // console.log(performance.measure(
-    //   "Clear Overlays",
-    //   "render-hexes-start",
-    //   "clear-overlays-end",
-    // ));
-    // console.log(performance.measure(
-    //   "Render Nearby Cells",
-    //   "clear-overlays-end",
-    //   "render-nearby-end",
-    // ));
-    // console.log(performance.measure(
-    //   "Render Hex Grid",
-    //   "render-nearby-end",
-    //   "render-hexes-end",
-    // ));
   }
 
   addCoin(
@@ -551,7 +521,8 @@ export class World {
     this.activeCoins.clear();
     this.coinsByCell.clear();
     this.persistedCoins.clear();
-    this.clearOverlays(map);
     this.cellCount = 0;
+    this.overlays.forEach((overlay) => map.removeLayer(overlay));
+    this.overlays.clear();
   }
 }
