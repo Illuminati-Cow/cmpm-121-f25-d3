@@ -336,7 +336,7 @@ export class World {
       const lat = this.cellBuffer[index + World.CELL_LAT_OFFSET];
       const lng = this.cellBuffer[index + World.CELL_LNG_OFFSET];
       const center = leaflet.latLng(lat, lng);
-      if (playerPos.distanceTo(center) < reachDistance) {
+      if (playerPos.distanceTo(center) <= reachDistance) {
         const q = this.cellBuffer[index + World.CELL_Q_OFFSET];
         const r = this.cellBuffer[index + World.CELL_R_OFFSET];
         nearby.push(new CellInstance(q, r, this.sharedData));
@@ -376,11 +376,11 @@ export class World {
       );
       const weight = opacityFunction(
         distance,
-        { min: 10, max: 60 },
+        { min: 10, max: playerRadius.reach },
         { min: 0.1, max: 0.4 },
       );
       ctx.lineWidth = weight;
-      ctx.fillStyle = "rgba(128, 128, 128, 0.1)";
+      ctx.fillStyle = `rgba(128, 128, 128, ${weight * 0.5})`;
       ctx.strokeStyle = "grey";
 
       this.drawHexPath(ctx, qr, map, nw);
@@ -523,7 +523,7 @@ export class World {
   private updateCoinReaches(playerRadius: PlayerRadius): void {
     for (const [_id, entry] of this.activeCoins) {
       const withinReach =
-        playerRadius.position.distanceTo(entry.coin.position) <=
+        playerRadius.position.distanceTo(entry.coin.cell.center) <=
           playerRadius.reach;
       entry.marker.setStyle({
         color: withinReach ? "gold" : "gray",
