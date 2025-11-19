@@ -27,31 +27,32 @@ const CLASSROOM_LATLNG = leaflet.latLng(
 const GAMEPLAY_ZOOM_LEVEL = 19;
 const PLAYER_REACH_DISTANCE = 60; // meters
 
+const eventBus = new EventTarget();
 const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 document.body.append(mapDiv);
 
-const inventory = new Inventory();
+const inventory = new Inventory(null, eventBus);
 const inventoryUI = createInventoryUI();
 mapDiv.append(inventoryUI);
 updateInventoryUI(inventory);
 
-const eventBus = new EventTarget();
-
 const coinGenerator = new CoinGenerator();
 
 const world = new World(leaflet.latLng(0, 0), coinGenerator);
-
-const initialCell = world.getCellAtLatLng(CLASSROOM_LATLNG);
-
 const map = leaflet.map(mapDiv, {
-  center: initialCell.center,
+  center: CLASSROOM_LATLNG,
   zoom: GAMEPLAY_ZOOM_LEVEL,
   minZoom: GAMEPLAY_ZOOM_LEVEL,
   maxZoom: GAMEPLAY_ZOOM_LEVEL,
   zoomControl: false,
   scrollWheelZoom: false,
 });
+
+const initialCell = world.getCellAtLatLng(CLASSROOM_LATLNG);
+
+const playerPosition = initialCell.center;
+const mode: "gps" | "ui" = "gps";
 // Populate the map with a background tile layer
 leaflet
   .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -71,12 +72,17 @@ document.body.append(createSettingsWindow(eventBus));
 
 const positioning = new Positioning(
   world,
-  { position: initialCell.center, reach: PLAYER_REACH_DISTANCE },
+  { position: playerPosition, reach: PLAYER_REACH_DISTANCE },
   map,
   eventBus,
+  mode,
 );
 
 //#region Game Logic
+
+eventBus.addEventListener("inventory-changed", () => {
+  updateInventoryUI(inventory);
+});
 
 eventBus.addEventListener("coin-hovered", (event) => {
   const detail = (event as CustomEvent).detail;
@@ -118,7 +124,6 @@ eventBus.addEventListener("coin-clicked", (event) => {
       );
     }
   }
-  updateInventoryUI(inventory);
   eventBus.dispatchEvent(new CustomEvent("coin-unhovered"));
 });
 
@@ -149,7 +154,6 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
       eventBus,
       map,
     );
-    updateInventoryUI(inventory);
   }
 });
 //#endregion
@@ -165,14 +169,12 @@ eventBus.addEventListener("new-game", () => {
   inventory.clear();
   updateInventoryUI(inventory);
   world.clear(map);
-  positioning.resetTo(initialCell.center, eventBus);
-  map.setView(initialCell.center);
-  const coord = world.latLngToHex(
-    initialCell.center.lat,
-    initialCell.center.lng,
-  );
-  world.updateCellsAround(coord, 10, map, positioning.playerRadius, eventBus);
-  world.renderHexes(map, positioning.playerRadius);
+  // if (mode === "ui") {
+  //   positioning.resetTo(initialCell.center, eventBus);
+  // } else {
+  positioning.resetTo(CLASSROOM_LATLNG, eventBus);
+  // }
+  // localStorage.removeItem("gameState");
 });
 
 eventBus.addEventListener("toggle-movement-mode", (event) => {

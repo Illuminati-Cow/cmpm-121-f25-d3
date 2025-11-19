@@ -87,7 +87,7 @@ export class Positioning {
     );
     this.world.updateCellsAround(
       coord,
-      10,
+      25,
       this.map,
       this.playerRadius,
       eventBus,
@@ -106,6 +106,10 @@ export class Positioning {
       this.playerMarker.unbindPopup();
       this.startGPS(eventBus);
     }
+  }
+
+  getMode(): "gps" | "ui" {
+    return this.mode;
   }
 
   private startGPS(eventBus: EventTarget): void {
@@ -131,5 +135,9 @@ export class Positioning {
 
   resetTo(position: leaflet.LatLng, eventBus: EventTarget): void {
     this.onMove(position, eventBus);
+    if (this.mode === "gps") {
+      this.stopGPS();
+      this.startGPS(eventBus);
+    }
   }
 }
