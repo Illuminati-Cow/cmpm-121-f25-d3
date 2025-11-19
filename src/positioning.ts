@@ -35,6 +35,7 @@ export class Positioning {
   constructor(
     private world: World,
     public playerRadius: PlayerRadius,
+    private cameraRadius: PlayerRadius,
     private map: leaflet.Map,
     eventBus: EventTarget,
     initialMode: "gps" | "ui" = "gps",
@@ -50,6 +51,11 @@ export class Positioning {
       const direction = detail.direction as Direction;
       this.move(direction);
       this.onMove(this.playerRadius.position, eventBus);
+    });
+
+    map.on("move", () => {
+      this.cameraRadius.position = map.getCenter();
+      this.world.renderHexes(this.map, this.playerRadius, this.cameraRadius);
     });
 
     this.onMove(this.playerRadius.position, eventBus);
@@ -92,7 +98,7 @@ export class Positioning {
       this.playerRadius,
       eventBus,
     );
-    this.world.renderHexes(this.map, this.playerRadius);
+    this.world.renderHexes(this.map, this.playerRadius, this.cameraRadius);
   }
 
   setMode(mode: "gps" | "ui", eventBus: EventTarget): void {

@@ -170,13 +170,14 @@ export class World {
       qr: { q: number; r: number },
       nw: leaflet.Point,
     ) => void,
-  ): void {
+  ): leaflet.ImageOverlay | undefined {
     if (qrs.length === 0) return;
-
+    performance.mark("create-hex-overlay-start");
     const allCorners = qrs.flatMap((qr) =>
       this.sharedData.getCorners(qr.q, qr.r)
     );
     const bounds = leaflet.latLngBounds(allCorners);
+    performance.mark("calculate-bounds-end");
 
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
@@ -189,15 +190,38 @@ export class World {
 
     canvas.width = width;
     canvas.height = height;
+    performance.mark("setup-canvas-end");
 
     for (const qr of qrs) {
       drawCell(ctx, qr, nw);
     }
+    performance.mark("draw-cells-end");
 
     const imgUrl = canvas.toDataURL();
     const imageOverlay = leaflet.imageOverlay(imgUrl, bounds);
     imageOverlay.addTo(map);
-    this.overlays.push(imageOverlay);
+    performance.mark("create-hex-overlay-end");
+    console.log(performance.measure(
+      "Create Hex Overlay",
+      "create-hex-overlay-start",
+      "create-hex-overlay-end",
+    ));
+    console.log(performance.measure(
+      "Calculate Bounds",
+      "create-hex-overlay-start",
+      "calculate-bounds-end",
+    ));
+    console.log(performance.measure(
+      "Setup Canvas",
+      "calculate-bounds-end",
+      "setup-canvas-end",
+    ));
+    console.log(performance.measure(
+      "Draw Cells",
+      "setup-canvas-end",
+      "draw-cells-end",
+    ));
+    return imageOverlay;
   }
 
   private clearOverlays(map: leaflet.Map): void {
@@ -371,7 +395,7 @@ export class World {
     };
 
     const nearbyQRs = nearbyCells.map((cell) => ({ q: cell.q, r: cell.r }));
-    this.createHexOverlay(map, nearbyQRs, (ctx, qr, nw) => {
+    const overlay = this.createHexOverlay(map, nearbyQRs, (ctx, qr, nw) => {
       const distance = playerRadius.position.distanceTo(
         this.sharedData.getCenter(qr.q, qr.r),
       );
@@ -388,6 +412,9 @@ export class World {
       ctx.fill();
       ctx.stroke();
     });
+    if (overlay) {
+      this.overlays.push(overlay);
+    }
   }
 
   private renderHexGrid(
@@ -426,20 +453,54 @@ export class World {
     const distantQRs = allVisibleQRs.filter((qr) =>
       !nearbyQRs.some((nqr) => nqr.q === qr.q && nqr.r === qr.r)
     );
-
-    this.createHexOverlay(map, distantQRs, (ctx, qr, nw) => {
+    const overlay = this.createHexOverlay(map, distantQRs, (ctx, qr, nw) => {
       ctx.strokeStyle = "lightgrey";
       ctx.lineWidth = 1;
 
       this.drawHexPath(ctx, qr, map, nw);
       ctx.stroke();
     });
+    if (overlay) {
+      this.overlays.push(overlay);
+    }
   }
 
-  renderHexes(map: leaflet.Map, playerRadius: PlayerRadius) {
-    this.clearOverlays(map);
-    this.renderNearbyCells(map, playerRadius);
-    this.renderHexGrid(map, playerRadius);
+  renderHexes(
+    map: leaflet.Map,
+    playerRadius: PlayerRadius,
+    cameraRadius: PlayerRadius,
+  ) {
+    performance.mark("render-hexes-start");
+    this.overlays.forEach((overlay) => {
+      if (overlay.getBounds().getCenter().distanceTo(cameraRadius.position)) {
+        map.removeLayer(overlay);
+      }
+    });
+    performance.mark("clear-overlays-end");
+    if (
+      cameraRadius.position.distanceTo(playerRadius.position) <=
+        cameraRadius.reach
+    ) {
+      this.renderNearbyCells(map, playerRadius);
+    }
+    performance.mark("render-nearby-end");
+    this.renderHexGrid(map, cameraRadius);
+    performance.mark("render-hexes-end");
+    // console.log(performance.measure(
+    //   "Clear Overlays",
+    //   "render-hexes-start",
+    //   "clear-overlays-end",
+    // ));
+    // console.log(performance.measure(
+    //   "Render Nearby Cells",
+    //   "clear-overlays-end",
+    //   "render-nearby-end",
+    // ));
+    // console.log(performance.measure(
+    //   "Render Hex Grid",
+    //   "render-nearby-end",
+    //   "render-hexes-end",
+    // ));
   }
 
   addCoin(

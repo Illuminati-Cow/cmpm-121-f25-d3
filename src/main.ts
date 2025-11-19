@@ -70,9 +70,17 @@ settingsButton.style.zIndex = "1000";
 mapDiv.append(settingsButton);
 document.body.append(createSettingsWindow(eventBus));
 
+console.log({
+  position: map.getCenter(),
+  reach: map.getBounds().getNorthEast().distanceTo(map.getCenter()),
+});
 const positioning = new Positioning(
   world,
   { position: playerPosition, reach: PLAYER_REACH_DISTANCE },
+  {
+    position: map.getCenter(),
+    reach: map.getBounds().getNorthEast().distanceTo(map.getCenter()),
+  },
   map,
   eventBus,
   mode,
@@ -156,6 +164,15 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
     );
   }
 });
+
+map.on("move", () => {
+  // console.log(
+  //   "Map moved to:",
+  //   map.getCenter(),
+  //   "Hex at center:",
+  //   world.latLngToHex(map.getCenter().lat, map.getCenter().lng),
+  // );
+});
 //#endregion
 
 //#region Settings
@@ -170,7 +187,7 @@ eventBus.addEventListener("new-game", () => {
   updateInventoryUI(inventory);
   world.clear(map);
   // if (mode === "ui") {
-  //   positioning.resetTo(initialCell.center, eventBus);
+  // positioning.resetTo(initialCell.center, eventBus);
   // } else {
   positioning.resetTo(CLASSROOM_LATLNG, eventBus);
   // }
