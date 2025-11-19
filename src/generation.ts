@@ -105,14 +105,21 @@ export function createCoinMarker(
   coin: Coin,
   withinReach: boolean,
 ): leaflet.CircleMarker {
-  return leaflet.circleMarker(coin.position, {
+  const marker = leaflet.circleMarker(coin.position, {
     color: withinReach ? "gold" : "gray",
     fillColor: withinReach ? "yellow" : "white",
     fillOpacity: withinReach ? 0.8 : 0.4,
     opacity: withinReach ? 0.8 : 0.4,
     radius: 5,
-    className: "coin-spawn",
+    className: "coin-spawn coin-marker",
+    bubblingMouseEvents: false,
   });
+  marker.bindTooltip(`${coin.value}`, {
+    permanent: true,
+    direction: "top",
+    className: "coin-tooltip",
+  });
+  return marker;
 }
 
 export function addCoinEventListeners(
