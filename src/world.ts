@@ -432,6 +432,22 @@ export class World {
     }
   }
 
+  private moveOverlay(key: string, newCenter: leaflet.LatLng): void {
+    const overlay = this.overlays.get(key);
+    if (!overlay) return;
+    const currentCenter = overlay.getCenter();
+    const deltaLat = newCenter.lat - currentCenter.lat;
+    const deltaLng = newCenter.lng - currentCenter.lng;
+    const oldBounds = overlay.getBounds();
+    const sw = oldBounds.getSouthWest();
+    const ne = oldBounds.getNorthEast();
+    const newBounds = leaflet.latLngBounds(
+      leaflet.latLng(sw.lat + deltaLat, sw.lng + deltaLng),
+      leaflet.latLng(ne.lat + deltaLat, ne.lng + deltaLng),
+    );
+    overlay.setBounds(newBounds);
+  }
+
   renderHexes(
     map: leaflet.Map,
     playerRadius: PlayerRadius,
@@ -460,16 +476,21 @@ export class World {
       distanceToCameraCenter < cameraRadius.reach &&
         cameraDistanceToNearbyCenter > cameraRadius.reach
     ) {
-      this.overlays.forEach((overlay) => map.removeLayer(overlay));
-      this.overlays.clear();
-      this.renderHexGrid(map, cameraRadius);
-      this.renderNearbyCells(map, playerRadius);
-    } else if (!gridOverlay || cameraDistanceToGridCenter >= apothem) {
-      if (gridOverlay) {
-        map.removeLayer(gridOverlay);
-        this.overlays.delete("grid");
+      if (!nearbyOverlay || !gridOverlay) {
+        this.overlays.forEach((overlay) => map.removeLayer(overlay));
+        this.overlays.clear();
+        this.renderHexGrid(map, cameraRadius);
+        this.renderNearbyCells(map, playerRadius);
+      } else {
+        this.moveOverlay("nearby", playerRadius.position);
+        this.moveOverlay("grid", cameraRadius.position);
       }
-      this.renderHexGrid(map, cameraRadius);
+    } else if (!gridOverlay || cameraDistanceToGridCenter >= apothem) {
+      if (!gridOverlay) {
+        this.renderHexGrid(map, cameraRadius);
+      } else {
+        this.moveOverlay("grid", cameraRadius.position);
+      }
     }
   }
 

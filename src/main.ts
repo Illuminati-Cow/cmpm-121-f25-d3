@@ -70,10 +70,6 @@ settingsButton.style.zIndex = "1000";
 mapDiv.append(settingsButton);
 document.body.append(createSettingsWindow(eventBus));
 
-console.log({
-  position: map.getCenter(),
-  reach: map.getBounds().getNorthEast().distanceTo(map.getCenter()),
-});
 const positioning = new Positioning(
   world,
   { position: playerPosition, reach: PLAYER_REACH_DISTANCE },

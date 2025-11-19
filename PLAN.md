@@ -48,12 +48,12 @@ This plan assumes you're working in TypeScript with Leaflet, Deno, and Vite, as 
 - [ ] Implement basic crafting logic: Allow placing a held coin on another by clicking near it, checking if values match (D3.a requirement)—pseudo-code: if heldCoin.value == targetCoin.value, newValue = heldCoin.value + targetCoin.value; else, deny.
 - [ ] Merge coin sprites: On successful craft, combine textures visually (e.g., overlay or blend pixels), updating the resulting coin's sprite.
 - [ ] Merge histories: Combine history arrays from both coins into the new coin's history, preserving chronological order.
-- [ ] Update inventory post-craft: Replace held coin with the crafted result, removing the placed coin from the map.
+- [x] Update inventory post-craft: Replace held coin with the crafted result, removing the placed coin from the map.
 
 ## 6. End Condition and Polish
 
-- [ ] Implement win condition: Check after crafting if the new coin's value equals 256, triggering a game-over screen or message.
+- [x] Implement win condition: Check after crafting if the new coin's value equals 256, triggering a game-over screen or message.
 - [ ] Add game state management: Use the memento pattern to track inventory, coins, and progress, ensuring persistence across sessions if needed.
-- [ ] Test determinism and performance: Verify world generation consistency and optimize for large maps (e.g., lazy-load cells).
 - [ ] Polish UI/UX: Ensure responsive design for mobile/touch, add loading states, and refine pop-ups for clarity.
 - [ ] Serialize game state data and store it in localStorage at a regular interval (5 seconds). Restore game state from localStorage on page reopen, if available.
+- [x] Optimize grid rendering in World.ts to move pre-rendered hex-grids instead of redrawing them in a new location

@@ -54,7 +54,8 @@ export class Positioning {
     });
 
     map.on("move", () => {
-      this.cameraRadius.position = map.getCenter();
+      this.cameraRadius.position =
+        this.world.getCellAtLatLng(this.map.getCenter()).center;
       this.world.renderHexes(this.map, this.playerRadius, this.cameraRadius);
     });
 
