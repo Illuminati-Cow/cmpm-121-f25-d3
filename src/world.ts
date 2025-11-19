@@ -117,7 +117,7 @@ export class World {
     string,
     { coin: Coin; marker: leaflet.CircleMarker }
   > = new Map();
-  private persistedCoins: Map<string, CoinMemento> = new Map();
+  private persistedCoins: Map<string, CoinMemento | null> = new Map();
   private overlays: Map<string, leaflet.ImageOverlay> = new Map();
 
   constructor(origin: leaflet.LatLng, private coinGenerator: CoinGenerator) {
@@ -136,12 +136,40 @@ export class World {
     };
   }
 
-  getPersistedCoinForCell(cellId: string): CoinMemento | undefined {
+  getPersistedCoinForCell(cellId: string): CoinMemento | null | undefined {
     return this.persistedCoins.get(cellId);
   }
 
   removePersisted(cellId: string): void {
     this.persistedCoins.delete(cellId);
+  }
+
+  // Persist an interacted-with coin's snapshot immediately
+  persistCoinSnapshot(coin: Coin): void {
+    const memento = createCoinMemento(coin);
+    this.persistedCoins.set(coin.cell.id, memento);
+  }
+
+  // Mark a cell as empty so generator will not respawn a coin there
+  persistRemovedCell(cellId: string): void {
+    this.persistedCoins.set(cellId, null);
+  }
+
+  getPersistedEntries(): { cellId: string; memento: CoinMemento | null }[] {
+    const entries: { cellId: string; memento: CoinMemento | null }[] = [];
+    for (const [cellId, memento] of this.persistedCoins.entries()) {
+      entries.push({ cellId, memento });
+    }
+    return entries;
+  }
+
+  setPersistedEntries(
+    entries: { cellId: string; memento: CoinMemento | null }[],
+  ): void {
+    this.persistedCoins.clear();
+    for (const e of entries) {
+      this.persistedCoins.set(e.cellId, e.memento);
+    }
   }
 
   private drawHexPath(
@@ -227,9 +255,12 @@ export class World {
         );
         const persisted = world.getPersistedCoinForCell(cell.id);
         let coin: Coin | undefined = undefined;
-        if (persisted) {
-          coin = world.restoreCoinFromMemento(persisted);
-          world.removePersisted(cell.id);
+        if (persisted !== undefined) {
+          if (persisted === null) {
+            coin = undefined; // intentionally empty
+          } else {
+            coin = world.restoreCoinFromMemento(persisted);
+          }
         } else {
           coin = world.coinGenerator.generateCoinForCell(cell);
         }
@@ -252,10 +283,7 @@ export class World {
           }
         }
         if (coin) {
-          if (coin.history.length > 1) { // interacted
-            const memento = createCoinMemento(coin);
-            world.persistedCoins.set(cellId, memento);
-          }
+          // Do not persist on unload; persistence happens at interaction time
           world.removeCoin(coin.id, map);
         }
       }

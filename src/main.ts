@@ -51,6 +51,10 @@ updateInventoryUI(inventory);
 const coinGenerator = new CoinGenerator();
 
 const world = new World(leaflet.latLng(0, 0), coinGenerator);
+// Restore persisted coins into the world before any updates/rendering
+if (restored?.persistedCoins) {
+  world.setPersistedEntries(restored.persistedCoins);
+}
 const map = leaflet.map(mapDiv, {
   center: startLatLng,
   zoom: GAMEPLAY_ZOOM_LEVEL,
@@ -118,12 +122,22 @@ eventBus.addEventListener("coin-clicked", (event) => {
   if (inventory.hasItem() && inventory.coin!.value === coin.value) {
     const oldCoin = inventory.coin;
     inventory.swapItem(craftCoin(oldCoin!, coin));
+    // Target coin consumed: remove from map and mark cell empty
     world.removeCoin(coin.id, map);
+    world.persistRemovedCell(coin.cell.id);
+    // Save updated game state including persisted coins
+    saveGameState({
+      config: { debugMovement: config.debugMovement },
+      player: { lat: positioning.position.lat, lng: positioning.position.lng },
+      persistedCoins: world.getPersistedEntries(),
+    });
     if ((inventory.coin?.value ?? 0) >= 256) {
       alert("You have crafted a 256 coin and won the game!");
     }
   } else {
+    // Pick up: remove from map and mark cell empty
     world.removeCoin(coin.id, map);
+    world.persistRemovedCell(coin.cell.id);
     coin.history.push(`Picked up from cell ${coin.cell.id}`);
     const oldCoin = inventory.swapItem(coin);
     if (oldCoin) {
@@ -137,7 +151,17 @@ eventBus.addEventListener("coin-clicked", (event) => {
         eventBus,
         map,
       );
+      // Persist placed coin state immediately
+      world.persistCoinSnapshot(oldCoin);
     }
+    saveGameState({
+      config: { debugMovement: config.debugMovement },
+      player: {
+        lat: positioning.position.lat,
+        lng: positioning.position.lng,
+      },
+      persistedCoins: world.getPersistedEntries(),
+    });
   }
   eventBus.dispatchEvent(new CustomEvent("coin-unhovered"));
 });
@@ -163,12 +187,20 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
     inventory.coin!.position = cell.center;
     inventory.coin!.cell = cell;
     inventory.coin!.history.push(`Placed in cell ${cell.id}`);
+    const placed = inventory.removeItem()!;
     world.addCoin(
-      inventory.removeItem()!,
+      placed,
       true,
       eventBus,
       map,
     );
+    // Persist placed coin state immediately
+    world.persistCoinSnapshot(placed);
+    saveGameState({
+      config: { debugMovement: config.debugMovement },
+      player: { lat: positioning.position.lat, lng: positioning.position.lng },
+      persistedCoins: world.getPersistedEntries(),
+    });
   }
 });
 
@@ -205,20 +237,18 @@ eventBus.addEventListener("toggle-movement-mode", (event) => {
   const detail = (event as CustomEvent).detail;
   positioning.setMode(detail.mode, eventBus);
   config.debugMovement = detail.mode === "ui";
-  const saveState = {
-    config: { debugMovement: true },
-    player: {
-      lat: positioning.position.lat,
-      lng: positioning.position.lng,
-    },
-  };
-  saveGameState(saveState);
+  saveGameState({
+    config: { debugMovement: config.debugMovement },
+    player: { lat: positioning.position.lat, lng: positioning.position.lng },
+    persistedCoins: world.getPersistedEntries(),
+  });
 });
 //#endregion
 
 eventBus.addEventListener("player-moved", () => {
   saveGameState({
-    config: { debugMovement: true },
+    config: { debugMovement: config.debugMovement },
     player: { lat: positioning.position.lat, lng: positioning.position.lng },
+    persistedCoins: world.getPersistedEntries(),
   });
 });

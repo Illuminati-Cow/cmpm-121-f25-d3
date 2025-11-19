@@ -1,3 +1,4 @@
+import type { CoinMemento } from "./generation.ts";
 export interface GameConfig {
   debugMovement: boolean;
 }
@@ -7,9 +8,15 @@ export interface PlayerState {
   lng: number;
 }
 
+export interface PersistedCoinEntry {
+  cellId: string;
+  memento: CoinMemento | null;
+}
+
 export interface GameState {
   config: GameConfig;
   player: PlayerState;
+  persistedCoins?: PersistedCoinEntry[];
 }
 
 const STORAGE_KEY = "gameState";
@@ -26,6 +33,30 @@ export function loadGameState(): GameState | null {
         },
         player: parsed.player,
       };
+      if (Array.isArray(parsed.persistedCoins)) {
+        const entries: PersistedCoinEntry[] = [];
+        for (const e of parsed.persistedCoins) {
+          if (e && typeof e.cellId === "string") {
+            if (e.memento === null) {
+              entries.push({ cellId: e.cellId, memento: null });
+            } else if (e.memento && typeof e.memento === "object") {
+              const m = e.memento;
+              if (
+                typeof m.id === "string" &&
+                typeof m.value === "number" &&
+                typeof m.lat === "number" &&
+                typeof m.lng === "number" &&
+                typeof m.q === "number" &&
+                typeof m.r === "number" &&
+                Array.isArray(m.history)
+              ) {
+                entries.push({ cellId: e.cellId, memento: m as CoinMemento });
+              }
+            }
+          }
+        }
+        state.persistedCoins = entries;
+      }
       return state;
     }
     return null;
@@ -37,6 +68,7 @@ export function loadGameState(): GameState | null {
 export function saveGameState(state: GameState): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    console.log(state);
   } catch (_) {
     // Ignore storage errors (quota, privacy mode, etc.)
   }
