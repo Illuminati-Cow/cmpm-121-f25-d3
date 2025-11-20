@@ -102,6 +102,35 @@ const positioning = new Positioning(
   mode,
 );
 
+// Debounced auto-save helper
+let persistTimeout: number | null = null;
+function requestPersist(delay: number = 750) {
+  if (persistTimeout !== null) {
+    clearTimeout(persistTimeout);
+  }
+  persistTimeout = setTimeout(() => {
+    persistTimeout = null;
+    persistCurrentState(config, positioning, world, inventory);
+  }, delay);
+}
+
+// Flush on page hide/unload
+globalThis.addEventListener("beforeunload", () => {
+  if (persistTimeout !== null) {
+    clearTimeout(persistTimeout);
+  }
+  persistCurrentState(config, positioning, world, inventory);
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    if (persistTimeout !== null) {
+      clearTimeout(persistTimeout);
+      persistTimeout = null;
+    }
+    persistCurrentState(config, positioning, world, inventory);
+  }
+});
+
 //#region Game Logic
 
 eventBus.addEventListener("inventory-changed", () => {
@@ -129,11 +158,12 @@ eventBus.addEventListener("coin-clicked", (event) => {
     inventory.swapItem(craftCoin(oldCoin!, coin));
     world.removeCoin(coin.id, map);
     world.persistRemovedCell(coin.cell.id);
-    persistCurrentState(config, positioning, world, inventory);
+    requestPersist();
     if ((inventory.coin?.value ?? 0) >= 256) {
       alert("You have crafted a 256 coin and won the game!");
     }
   } else {
+    requestPersist();
     world.removeCoin(coin.id, map);
     world.persistRemovedCell(coin.cell.id);
     coin.history.push(`Picked up from cell ${coin.cell.id}`);
@@ -184,7 +214,7 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
       map,
     );
     world.persistCoinSnapshot(placed);
-    persistCurrentState(config, positioning, world, inventory);
+    requestPersist();
   }
 });
 //#endregion
@@ -209,10 +239,10 @@ eventBus.addEventListener("toggle-movement-mode", (event) => {
   const detail = (event as CustomEvent).detail;
   positioning.setMode(detail.mode, eventBus);
   config.debugMovement = detail.mode === "ui";
-  persistCurrentState(config, positioning, world, inventory);
+  requestPersist();
 });
 //#endregion
 
 eventBus.addEventListener("player-moved", () => {
-  persistCurrentState(config, positioning, world, inventory);
+  requestPersist(500); // slightly faster debounce for movement
 });
