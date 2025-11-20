@@ -65,6 +65,8 @@ const map = leaflet.map(mapDiv, {
   maxZoom: GAMEPLAY_ZOOM_LEVEL,
   zoomControl: false,
   scrollWheelZoom: false,
+  touchZoom: false,
+  doubleClickZoom: false,
 });
 
 const initialCell = world.getCellAtLatLng(startLatLng);
@@ -99,8 +101,6 @@ const positioning = new Positioning(
   eventBus,
   mode,
 );
-
-// (Inventory restoration handled above)
 
 //#region Game Logic
 
@@ -168,7 +168,6 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
   if (distance > positioning.reach) return;
 
   const coinInCell = world.getCoinInCell(cell);
-  console.log(coinInCell);
   if (coinInCell) {
     eventBus.dispatchEvent(
       new CustomEvent("coin-clicked", { detail: { coin: coinInCell } }),
@@ -202,7 +201,7 @@ eventBus.addEventListener("new-game", () => {
   updateInventoryUI(inventory);
   world.clear(map);
   if (config.debugMovement) {
-    positioning.resetTo(initialCell.center, eventBus);
+    positioning.resetTo(CLASSROOM_LATLNG, eventBus);
   }
 });
 
