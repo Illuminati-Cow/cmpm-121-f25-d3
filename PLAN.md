@@ -61,6 +61,7 @@ Serialize game state data and store it in localStorage at a regular interval (5 
 - [x] Refactor out the coinsbycell map, as every coin either has a marker and is active or is inactive and is stored as a memento.
 - [x] Coins should be persisted when interacted with rather than when unloaded. Removed coins should be persisted with a null object, so that generation knows to not generate a coin for that cell.
 - [x] Persisted coins should be stored in game state, and restored to the World class on load.
+- [x] Save the coin in the user's inventory in game state
 
 ## 7. End Condition and Polish
 

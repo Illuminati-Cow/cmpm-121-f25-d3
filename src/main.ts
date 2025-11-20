@@ -5,7 +5,7 @@ import "./_leafletWorkaround.ts";
 import "./style.css";
 
 import { config } from "./config.ts";
-import { CoinGenerator, craftCoin } from "./generation.ts";
+import { CoinGenerator, craftCoin, createCoinMemento } from "./generation.ts";
 import { Inventory } from "./player.ts";
 import { Positioning } from "./positioning.ts";
 import { loadGameState, saveGameState } from "./serialization.ts";
@@ -97,6 +97,20 @@ const positioning = new Positioning(
   mode,
 );
 
+if (restored?.inventoryCoin) {
+  const m = restored.inventoryCoin;
+  const cellInstance = world.getCell(m.q, m.r);
+  const restoredCoin = {
+    id: m.id,
+    value: m.value,
+    position: leaflet.latLng(m.lat, m.lng),
+    cell: cellInstance,
+    history: [...m.history],
+  };
+  inventory.swapItem(restoredCoin);
+  updateInventoryUI(inventory);
+}
+
 //#region Game Logic
 
 eventBus.addEventListener("inventory-changed", () => {
@@ -130,6 +144,9 @@ eventBus.addEventListener("coin-clicked", (event) => {
       config: { debugMovement: config.debugMovement },
       player: { lat: positioning.position.lat, lng: positioning.position.lng },
       persistedCoins: world.getPersistedEntries(),
+      inventoryCoin: inventory.hasItem()
+        ? createCoinMemento(inventory.coin!)
+        : null,
     });
     if ((inventory.coin?.value ?? 0) >= 256) {
       alert("You have crafted a 256 coin and won the game!");
@@ -161,6 +178,9 @@ eventBus.addEventListener("coin-clicked", (event) => {
         lng: positioning.position.lng,
       },
       persistedCoins: world.getPersistedEntries(),
+      inventoryCoin: inventory.hasItem()
+        ? createCoinMemento(inventory.coin!)
+        : null,
     });
   }
   eventBus.dispatchEvent(new CustomEvent("coin-unhovered"));
@@ -200,6 +220,9 @@ map.addEventListener("click", (event: { latlng: LatLng }) => {
       config: { debugMovement: config.debugMovement },
       player: { lat: positioning.position.lat, lng: positioning.position.lng },
       persistedCoins: world.getPersistedEntries(),
+      inventoryCoin: inventory.hasItem()
+        ? createCoinMemento(inventory.coin!)
+        : null,
     });
   }
 });
@@ -241,6 +264,9 @@ eventBus.addEventListener("toggle-movement-mode", (event) => {
     config: { debugMovement: config.debugMovement },
     player: { lat: positioning.position.lat, lng: positioning.position.lng },
     persistedCoins: world.getPersistedEntries(),
+    inventoryCoin: inventory.hasItem()
+      ? createCoinMemento(inventory.coin!)
+      : null,
   });
 });
 //#endregion
@@ -250,5 +276,8 @@ eventBus.addEventListener("player-moved", () => {
     config: { debugMovement: config.debugMovement },
     player: { lat: positioning.position.lat, lng: positioning.position.lng },
     persistedCoins: world.getPersistedEntries(),
+    inventoryCoin: inventory.hasItem()
+      ? createCoinMemento(inventory.coin!)
+      : null,
   });
 });

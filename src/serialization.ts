@@ -17,6 +17,7 @@ export interface GameState {
   config: GameConfig;
   player: PlayerState;
   persistedCoins?: PersistedCoinEntry[];
+  inventoryCoin?: CoinMemento | null;
 }
 
 const STORAGE_KEY = "gameState";
@@ -57,6 +58,22 @@ export function loadGameState(): GameState | null {
         }
         state.persistedCoins = entries;
       }
+      if (parsed.inventoryCoin) {
+        const m = parsed.inventoryCoin;
+        if (
+          m === null ||
+          (typeof m === "object" &&
+            typeof m.id === "string" &&
+            typeof m.value === "number" &&
+            typeof m.lat === "number" &&
+            typeof m.lng === "number" &&
+            typeof m.q === "number" &&
+            typeof m.r === "number" &&
+            Array.isArray(m.history))
+        ) {
+          state.inventoryCoin = m as CoinMemento | null;
+        }
+      }
       return state;
     }
     return null;
@@ -68,7 +85,6 @@ export function loadGameState(): GameState | null {
 export function saveGameState(state: GameState): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    console.log(state);
   } catch (_) {
     // Ignore storage errors (quota, privacy mode, etc.)
   }
