@@ -15,6 +15,7 @@ import {
 } from "./serialization.ts";
 import {
   createCoinPopup,
+  createHomeButton,
   createInventoryUI,
   createSettingsButton,
   createSettingsWindow,
@@ -51,6 +52,13 @@ const inventory = new Inventory(null, eventBus);
 const inventoryUI = createInventoryUI();
 mapDiv.append(inventoryUI);
 updateInventoryUI(inventory);
+
+const homeButton = createHomeButton(eventBus);
+homeButton.style.position = "absolute";
+homeButton.style.top = "10px";
+homeButton.style.right = "10px";
+homeButton.style.zIndex = "1000";
+mapDiv.append(homeButton);
 
 const coinGenerator = new CoinGenerator();
 
@@ -245,4 +253,8 @@ eventBus.addEventListener("toggle-movement-mode", (event) => {
 
 eventBus.addEventListener("player-moved", () => {
   requestPersist(500); // slightly faster debounce for movement
+});
+
+eventBus.addEventListener("move-camera-home", () => {
+  map.panTo(positioning.position);
 });

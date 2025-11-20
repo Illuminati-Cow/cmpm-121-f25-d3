@@ -172,3 +172,13 @@ export function createSettingsWindow(eventBus: EventTarget): HTMLElement {
   settingsWindow.style.display = "none";
   return container;
 }
+
+export function createHomeButton(eventBus: EventTarget): HTMLElement {
+  const button = document.createElement("button");
+  button.className = "home-button";
+  button.innerHTML = "🏠";
+  button.onclick = () => {
+    eventBus.dispatchEvent(new CustomEvent("move-camera-home"));
+  };
+  return button;
+}

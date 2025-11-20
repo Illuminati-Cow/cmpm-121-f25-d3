@@ -113,7 +113,7 @@ body {
   justify-content: center;
   color: black;
   font-family: Inter, sans-serif;
-  font-size: 1.25rem;
+  font-size: 1.75rem;
   font-weight: bold;
   z-index: 1000;
   -webkit-transform: translate(-50%, -20%);
@@ -152,7 +152,7 @@ body {
 .coin-tooltip {
   bottom: -1rem;
   background-color: transparent;
-  backdrop-filter: blur(2px) brightness(1.1);
+  backdrop-filter: brightness(1.1);
   color: black;
   font-weight: bold;
   border: 1px solid gold;
@@ -237,6 +237,27 @@ body {
   -moz-transform: scale(1.25);
   -ms-transform: scale(1.25);
   -o-transform: scale(1.25);
+}
+
+.home-button {
+  width: 40px;
+  height: 40px;
+  font-size: 32px;
+  border: none;
+  background-color: transparent;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: transform 0.3s ease-out;
+  -webkit-transition: transform 0.3s ease-out;
+  -moz-transition: transform 0.3s ease-out;
+  -ms-transition: transform 0.3s ease-out;
+  -o-transition: transform 0.3s ease-out;
 }
 
 .settings-window {
